@@ -213,9 +213,9 @@ class HybridSearchEngine:
             
         except Exception as e:
             logger.error(f"Semantic search failed: {e}")
-            # Fallback to keyword search
-            logger.warning("Falling back to keyword search")
-            return self.keyword_search(index_name, query, size, date_from=date_from, date_to=date_to, sort_by=sort_by)
+            # If semantic search fails (e.g. no embedding field), return empty list
+            # The hybrid search aggregator will then just use keyword results
+            return []
     
     def hybrid_search(
         self,
