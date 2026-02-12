@@ -31,10 +31,20 @@ class Settings(BaseSettings):
     api_workers: int = Field(default=4, alias="API_WORKERS")
     
     # Elasticsearch
-    elasticsearch_host: str = Field(default="localhost", alias="ELASTICSEARCH_HOST")
-    elasticsearch_port: int = Field(default=9200, alias="ELASTICSEARCH_PORT")
-    elasticsearch_user: str = Field(default="elastic", alias="ELASTICSEARCH_USER")
-    elasticsearch_password: str = Field(default="changeme", alias="ELASTICSEARCH_PASSWORD")
+    # Elasticsearch
+    elasticsearch_host: str = Field(
+        default=os.environ.get("ELASTICSEARCH_HOST", "assertive-mahogany-1m2hcasg.us-east-1.bonsaisearch.net"), 
+        alias="ELASTICSEARCH_HOST"
+    )
+    elasticsearch_port: int = Field(default=443, alias="ELASTICSEARCH_PORT")
+    elasticsearch_user: str = Field(
+        default=os.environ.get("ELASTICSEARCH_USER") or os.environ.get("ELASTICSEARCH_USERNAME") or "0204784e62",
+        alias="ELASTICSEARCH_USER"
+    )
+    elasticsearch_password: str = Field(
+        default=os.environ.get("ELASTICSEARCH_PASSWORD", "38aa998d6c5c2891232c"), 
+        alias="ELASTICSEARCH_PASSWORD"
+    )
     
     # Redis
     redis_host: str = Field(default="localhost", alias="REDIS_HOST")
