@@ -1,8 +1,10 @@
 
-FROM python:3.9-slim
+# Use the official Python 3.10 slim image (newer, better support)
+FROM python:3.10-slim
 
 # Set up environment variables
 ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
     PORT=7860 \
     APP_HOME=/app \
     MODEL_CACHE_DIR=/app/models
@@ -14,29 +16,33 @@ RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     libpq-dev \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir gunicorn uvicorn
-
-# Create user with ID 1000 BEFORE copying files
+# Create the user carefully
 RUN useradd -m -u 1000 user
 
-# Create directories and set permissions
-RUN mkdir -p /app/models && chown -R user:user /app
+# Switch to directory ownership
+RUN chown -R user:user $APP_HOME
 
-# Switch to user
+# Install python dependencies as user (best practice)
 USER user
-ENV PATH=/home/user/.local/bin:$PATH
+ENV PATH="/home/user/.local/bin:$PATH"
 
-# Copy the rest of the application
-# Note: --chown=user:user ensures files are owned by the user
+# Copy requirements First (Cache optimization)
+COPY --chown=user:user requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir uvicorn
+
+# Copy application code
 COPY --chown=user:user . .
 
-# Expose the default Hugging Face port
+# Create model directory again just to be safe about permissions
+RUN mkdir -p $MODEL_CACHE_DIR
+
+# Expose port
 EXPOSE 7860
 
-# Command to run the application
-CMD ["gunicorn", "-w", "2", "-k", "uvicorn.workers.UvicornWorker", "src.api.app:app", "--bind", "0.0.0.0:7860", "--timeout", "300"]
+# Simple run command (No gunicorn to reduce complexity for now)
+CMD ["uvicorn", "src.api.app:app", "--host", "0.0.0.0", "--port", "7860", "--workers", "2", "--timeout-keep-alive", "300"]
