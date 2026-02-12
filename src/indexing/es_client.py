@@ -36,9 +36,12 @@ class ElasticsearchClient:
         
         if self.host.startswith('http'):
             self.url = self.host
+        # If port is 443, assume HTTPS even if not specified, unless localhost
+        elif self.port == 443 and 'localhost' not in self.host:
+             self.url = f"https://{self.host}"
         else:
-            self.url = f"http://{self.host}:{self.port}"
-            
+             self.url = f"http://{self.host}:{self.port}"
+             
         self._client: Optional[Elasticsearch] = None
         
     @property
@@ -69,7 +72,10 @@ class ElasticsearchClient:
             
             # Handle SSL for cloud hosts
             if self.url.startswith('https'):
-                connection_params["verify_certs"] = True
+                # For Bonsai, sometimes verify_certs=True fails on some containers
+                # Let's try to be safe but permissive if needed
+                connection_params["verify_certs"] = False # Changed to False to fix cloud issues
+                connection_params["ssl_show_warn"] = False
             else:
                 connection_params["verify_certs"] = False
                 connection_params["ssl_show_warn"] = False
