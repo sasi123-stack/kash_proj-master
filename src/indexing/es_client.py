@@ -1,18 +1,25 @@
-"""Elasticsearch client and connection manager."""
+"""Elasticsearch/OpenSearch client and connection manager."""
 
-from typing import Optional
+from typing import Optional, Union, Any
 
-from elasticsearch import Elasticsearch
-from elasticsearch.exceptions import ConnectionError as ESConnectionError
+try:
+    from elasticsearch import Elasticsearch
+    from elasticsearch.exceptions import ConnectionError as ESConnectionError
+except ImportError:
+    Elasticsearch = None
+    ESConnectionError = Exception
+
+try:
+    from opensearchpy import OpenSearch
+except ImportError:
+    OpenSearch = None
 
 from src.utils.config import settings
-from src.utils.logger import get_logger
-
-logger = get_logger(__name__)
+from src.utils.logger import logger
 
 
 class ElasticsearchClient:
-    """Manages Elasticsearch connection and operations."""
+    """Manages Elasticsearch/OpenSearch connection and operations."""
     
     def __init__(
         self,
@@ -21,11 +28,11 @@ class ElasticsearchClient:
         username: str = None,
         password: str = None
     ):
-        """Initialize Elasticsearch client.
+        """Initialize Client.
         
         Args:
-            host: Elasticsearch host
-            port: Elasticsearch port
+            host: Host URL
+            port: Port
             username: Username for authentication
             password: Password for authentication
         """
@@ -34,96 +41,114 @@ class ElasticsearchClient:
         self.username = username or settings.elasticsearch_user
         self.password = password or settings.elasticsearch_password
         
+        # Build URL
         if self.host.startswith('http'):
             self.url = self.host
-        # If port is 443, assume HTTPS even if not specified, unless localhost
         elif self.port == 443 and 'localhost' not in self.host:
              self.url = f"https://{self.host}"
         else:
              self.url = f"http://{self.host}:{self.port}"
              
-        self._client: Optional[Elasticsearch] = None
+        self._client: Optional[Union[Elasticsearch, OpenSearch]] = None
+        self._is_opensearch = False
         
     @property
-    def client(self) -> Elasticsearch:
-        """Get or create Elasticsearch client.
-        
-        Returns:
-            Elasticsearch client instance
+    def client(self) -> Union[Elasticsearch, OpenSearch]:
+        """Get or create client instance.
         """
         if self._client is None:
             self._connect()
         return self._client
     
     def _connect(self):
-        """Establish connection to Elasticsearch."""
+        """Establish connection."""
         try:
-            logger.info(f"Connecting to Elasticsearch at {self.url}")
+            logger.info(f"Connecting to Search Engine at {self.url}...")
             
-            # Determine connection parameters
-            connection_params = {
-                "hosts": [self.url],
-                "request_timeout": 30
-            }
-            
-            # Add authentication if provided (required for Bonsai.io)
-            if self.username and self.password and self.password != "changeme":
-                connection_params["basic_auth"] = (self.username, self.password)
-            
-            # Handle SSL for cloud hosts
-            if self.url.startswith('https'):
-                # For Bonsai, sometimes verify_certs=True fails on some containers
-                # Let's try to be safe but permissive if needed
-                connection_params["verify_certs"] = False # Changed to False to fix cloud issues
-                connection_params["ssl_show_warn"] = False
-            else:
-                connection_params["verify_certs"] = False
-                connection_params["ssl_show_warn"] = False
+            # --- Attempt 1: OpenSearch (Preferred for Bonsai) ---
+            if OpenSearch:
+                try:
+                    logger.info("Attempting connection with OpenSearch client...")
+                    # Basic Auth for OpenSearch
+                    auth = None
+                    if self.username and self.password:
+                        auth = (self.username, self.password)
+                    
+                    os_client = OpenSearch(
+                        hosts=[self.url],
+                        http_auth=auth,
+                        use_ssl=self.url.startswith('https'),
+                        verify_certs=True,
+                        ssl_assert_hostname=False,
+                        ssl_show_warn=False,
+                        timeout=30
+                    )
+                    
+                    if os_client.ping():
+                        info = os_client.info()
+                        version = info['version']['number']
+                        dist = info['version'].get('distribution', 'elasticsearch')
+                        logger.info(f"✅ Connected to OpenSearch/Elasticsearch {version} ({dist})")
+                        self._client = os_client
+                        self._is_opensearch = True
+                        return
+                    else:
+                         logger.warning("OpenSearch ping failed.")
+                except Exception as e:
+                    logger.warning(f"OpenSearch connection attempt failed: {e}")
 
-            self._client = Elasticsearch(**connection_params)
+            # --- Attempt 2: Elasticsearch (Fallback) ---
+            if Elasticsearch:
+                logger.info("Attempting connection with Elasticsearch client...")
+                # Basic Auth for Elasticsearch
+                basic_auth = None
+                if self.username and self.password:
+                    basic_auth = (self.username, self.password)
+                
+                es_client = Elasticsearch(
+                    hosts=[self.url],
+                    basic_auth=basic_auth,
+                    verify_certs=False, # Often needed for older ES/Bonsai
+                    ssl_show_warn=False,
+                    request_timeout=30
+                )
+                
+                if es_client.ping():
+                    info = es_client.info()
+                    version = info['version']['number']
+                    logger.info(f"✅ Connected to Elasticsearch {version}")
+                    self._client = es_client
+                    self._is_opensearch = False
+                    return
+                else:
+                    logger.error("Elasticsearch ping failed.")
             
-            # Test connection
-            if self._client.ping():
-                info = self._client.info()
-                version = info['version']['number']
-                logger.info(f"Connected to Elasticsearch {version}")
-            else:
-                raise ESConnectionError("Failed to ping Elasticsearch")
+            raise Exception("Could not connect to search engine with either client.")
                 
         except Exception as e:
-            logger.error(f"Failed to connect to Elasticsearch: {e}", exc_info=True)
+            logger.error(f"Failed to connect to Search Engine: {e}", exc_info=True)
             raise
     
     def is_connected(self) -> bool:
-        """Check if connected to Elasticsearch.
-        
-        Returns:
-            True if connected, False otherwise
-        """
+        """Check if connected."""
         try:
             return self.client.ping()
         except:
             return False
     
     def close(self):
-        """Close Elasticsearch connection."""
+        """Close connection."""
         if self._client:
             self._client.close()
             self._client = None
-            logger.info("Elasticsearch connection closed")
+            logger.info("Connection closed")
     
     def get_cluster_health(self) -> dict:
-        """Get cluster health information.
-        
-        Returns:
-            Cluster health dictionary
-        """
+        """Get cluster health."""
         return self.client.cluster.health()
     
     def __enter__(self):
-        """Context manager entry."""
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit."""
         self.close()

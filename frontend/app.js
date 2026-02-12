@@ -5,13 +5,11 @@ const isVercel = window.location.hostname.includes('vercel.app');
 
 // Backend URLs for different environments
 const NGROK_BACKEND_URL = 'https://nonreliably-unaxised-kit.ngrok-free.dev/api/v1';
-const RENDER_BACKEND_URL = 'https://nonreliably-unaxised-kit.ngrok-free.dev/api/v1'; // Updated to use ngrok for testing
+const RENDER_BACKEND_URL = 'https://sasidhara123-biomed-scholar-api.hf.space/api/v1'; // Live Hugging Face Space
 
 // API URL configuration
 const API_BASE_URL = (isLocal) ? 'http://localhost:8000/api/v1' :
-    (isVercel || isFirebase ? RENDER_BACKEND_URL :
-        (isNgrok ? window.location.origin + '/api/v1' :
-            RENDER_BACKEND_URL));
+    RENDER_BACKEND_URL;
 
 // Firebase Configuration
 // REPLACE THESE VALUES WITH YOUR FIREBASE PROJECT CONFIGURATION

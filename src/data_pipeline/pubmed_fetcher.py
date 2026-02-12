@@ -32,7 +32,19 @@ class PubMedFetcher:
             rate_limit: Requests per second (10 with key, 3 without)
         """
         self.api_key = api_key or settings.pubmed_api_key
+        # Check for placeholder default value and ignore it
+        if self.api_key and "your_ncbi_api_key_here" in self.api_key:
+            logger.warning("Ignoring placeholder PubMed API Key found in settings.")
+            self.api_key = None
+            
         self.email = email or settings.pubmed_email
+        if self.email and "your_email@example.com" in self.email:
+             # If using default email from .env, replace or warn
+             # Often NCBI blocks requests without email or with invalid ones?
+             # But 'student@university.edu' is passed in the caller, so it should be fine there.
+             # However, this logic here loads from settings if email arg is None.
+             pass
+
         self.rate_limit = rate_limit
         self.last_request_time = 0
         
