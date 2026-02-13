@@ -134,8 +134,9 @@ async def search_documents(
             doc_id = result.get("id", "")
             
             # Determine source type from document fields
-            # PubMed articles have 'pmid', clinical trials have 'nct_id'
-            if "pmid" in source and source["pmid"]:
+            if "source" in source and source["source"]:
+                source_type = source["source"]
+            elif "pmid" in source and source["pmid"]:
                 source_type = "pubmed"
             elif "nct_id" in source and source["nct_id"]:
                 source_type = "clinical_trials"

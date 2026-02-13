@@ -103,12 +103,27 @@
                         <line x1="17" y1="16" x2="23" y2="16" />
                     </svg>
                 </button>
+                <div class="search-loader hidden" id="search-loader">
+                    <svg class="spinner" viewBox="0 0 50 50">
+                        <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                    </svg>
+                </div>
                 <button id="header-search-btn" class="search-btn" title="Search">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8" />
                         <path d="M21 21l-4.35-4.35" />
                     </svg>
                 </button>
+            </div>
+
+            <!-- Quick Filters -->
+            <div class="quick-filters">
+                <button class="quick-filter-chip" onclick="toggleQuickFilter('dateRange', '2024')">Since 2024</button>
+                <button class="quick-filter-chip" onclick="toggleQuickFilter('source', 'clinical_trials')">Clinical
+                    Trials</button>
+                <button class="quick-filter-chip" onclick="toggleQuickFilter('articleTypes', 'review')">Review
+                    Articles</button>
+                <button class="quick-filter-chip" onclick="toggleQuickFilter('dateRange', '2020')">Last 5 Years</button>
             </div>
             <div id="recent-searches-bar" class="recent-searches-header hidden">
                 <div id="recent-chips" class="recent-chips"></div>
@@ -685,17 +700,7 @@
                                 </div>
                                 <h2>How can I help with your research?</h2>
                                 <p>Ask me about biomedical topics, clinical trials, or specific articles.</p>
-                                <div class="chat-examples">
-                                    <button
-                                        onclick="sendChatMessage('What are the latest treatments for diabetes?')">Latest
-                                        diabetes treatments</button>
-                                    <button
-                                        onclick="sendChatMessage('Summarize the side effects of mRNA vaccines')">mRNA
-                                        vaccine side effects</button>
-                                    <button
-                                        onclick="sendChatMessage('Find clinical trials for Alzheimer\'s disease')">Alzheimer's
-                                        clinical trials</button>
-                                </div>
+                                <!-- Examples removed -->
                             </div>
                         </div>
 
@@ -732,48 +737,10 @@
                             <canvas id="trendsChart"></canvas>
                         </div>
 
-                        <div class="trends-grid">
-                            <div class="trend-card" onclick="setExampleQuery('CAR-T cell therapy')">
-                                <div class="trend-rank">1</div>
-                                <div class="trend-info">
-                                    <h4>CAR-T Cell Therapy</h4>
-                                    <span class="trend-growth">↑ 45% this month</span>
-                                </div>
-                            </div>
-                            <div class="trend-card" onclick="setExampleQuery('CRISPR gene editing')">
-                                <div class="trend-rank">2</div>
-                                <div class="trend-info">
-                                    <h4>CRISPR Gene Editing</h4>
-                                    <span class="trend-growth">↑ 38% this month</span>
-                                </div>
-                            </div>
-                            <div class="trend-card" onclick="setExampleQuery('Long COVID syndrome')">
-                                <div class="trend-rank">3</div>
-                                <div class="trend-info">
-                                    <h4>Long COVID Syndrome</h4>
-                                    <span class="trend-growth">↑ 32% this month</span>
-                                </div>
-                            </div>
-                            <div class="trend-card" onclick="setExampleQuery('mRNA vaccine technology')">
-                                <div class="trend-rank">4</div>
-                                <div class="trend-info">
-                                    <h4>mRNA Vaccine Technology</h4>
-                                    <span class="trend-growth">↑ 28% this month</span>
-                                </div>
-                            </div>
-                            <div class="trend-card" onclick="setExampleQuery('AI in drug discovery')">
-                                <div class="trend-rank">5</div>
-                                <div class="trend-info">
-                                    <h4>AI in Drug Discovery</h4>
-                                    <span class="trend-growth">↑ 25% this month</span>
-                                </div>
-                            </div>
-                            <div class="trend-card" onclick="setExampleQuery('gut microbiome health')">
-                                <div class="trend-rank">6</div>
-                                <div class="trend-info">
-                                    <h4>Gut Microbiome Health</h4>
-                                    <span class="trend-growth">↑ 22% this month</span>
-                                </div>
+                        <div class="trends-grid" id="trends-grid">
+                            <!-- Trend cards removed as per request -->
+                            <div class="empty-state">
+                                <p>Enter a search query to see trends</p>
                             </div>
                         </div>
 

@@ -141,17 +141,36 @@ def run_ingestion():
         }
         make_es_request("PUT", index_name, mapping)
 
-    # 2. Define Queires
+    # 2. Define Queries (Expanded)
     queries = [
+        # Major Diseases
         "cancer immunotherapy",
         "type 2 diabetes treatment",
         "alzheimers disease",
+        "cardiovascular disease prevention",
+        "parkinsons disease neuroprotection",
+        "obesity metabolic syndrome",
+        "chronic kidney disease management",
+        "asthma severe treatment",
+        "rheumatoid arthritis biologics",
+        
+        # Innovative Technologies
         "CRISPR gene editing",
-        "covid-19 vaccine mRNA",
-        "hypertension management", 
-        "depression cognitive therapy",
-        "climate change health impact",
-        "artificial intelligence medicine"
+        "mRNA vaccine technology",
+        "artificial intelligence in radiology",
+        "machine learning drug discovery",
+        "CAR-T cell therapy",
+        "nanomedicine drug delivery",
+        
+        # Public Health & Mental Health
+        "covid-19 long term effects",
+        "depression cognitive behavioral therapy",
+        "anxiety disorders treatment",
+        "schizophrenia novel antipsychotics",
+        "climate change infectious diseases",
+        "antibiotic resistance mechanisms",
+        "gut microbiome mental health",
+        "social determinants of health"
     ]
 
     total_indexed = 0
@@ -160,7 +179,7 @@ def run_ingestion():
         print(f"\nProcessing: '{q}'")
         
         # A. Search
-        pmids = fetch_pubmed_ids(q, max_results=100)
+        pmids = fetch_pubmed_ids(q, max_results=200)
         print(f"  Found {len(pmids)} IDs")
         
         # B. Fetch Details

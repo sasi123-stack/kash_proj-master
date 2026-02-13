@@ -1051,7 +1051,11 @@ async function performSearch() {
 
     // Show skeleton, hide actual results
     const skeleton = document.getElementById('skeleton-loader');
+    const searchLoader = document.getElementById('search-loader');
+
     if (skeleton) skeleton.classList.remove('hidden');
+    if (searchLoader) searchLoader.classList.remove('hidden');
+
     if (searchResults) {
         searchResults.innerHTML = ''; // Clear results while loading
         searchResults.classList.add('hidden');
@@ -1102,11 +1106,62 @@ async function performSearch() {
         console.error('Search failed:', error);
     } finally {
         if (headerSearchBtn) headerSearchBtn.disabled = false;
-        // Hide skeleton
+        // Hide skeleton and loader
         const skeleton = document.getElementById('skeleton-loader');
         if (skeleton) skeleton.classList.add('hidden');
+        if (searchLoader) searchLoader.classList.add('hidden');
+
         if (searchResults) searchResults.classList.remove('hidden');
     }
+}
+
+function toggleQuickFilter(type, value) {
+    // Update State
+    if (type === 'source') {
+        currentFilters.source = (currentFilters.source === value) ? 'all' : value;
+    } else if (type === 'dateRange') {
+        currentFilters.dateRange = (currentFilters.dateRange === value) ? 'any' : value;
+    } else if (type === 'articleTypes') {
+        if (currentFilters.articleTypes.length === 1 && currentFilters.articleTypes[0] === value) {
+            currentFilters.articleTypes = ['research', 'review', 'meta-analysis', 'case-study'];
+        } else {
+            currentFilters.articleTypes = [value];
+        }
+    }
+
+    // Update Sidebar UI to match
+    updateSidebarUI();
+
+    // Perform Search
+    const searchInput = document.getElementById('header-search-input');
+    if (searchInput && searchInput.value.trim()) {
+        performSearch();
+    }
+}
+
+function updateSidebarUI() {
+    // Update Chips
+    document.querySelectorAll('.filter-chip').forEach(c => {
+        if (c.dataset.filter === currentFilters.source) c.classList.add('active');
+        else c.classList.remove('active');
+    });
+
+    // Update Date Radio
+    document.querySelectorAll('input[name="date-range"]').forEach(r => {
+        r.checked = (r.value === currentFilters.dateRange);
+    });
+
+    // Update Quick Filter Chips Logic
+    document.querySelectorAll('.quick-filter-chip').forEach(q => {
+        const onclick = q.getAttribute('onclick');
+        let isActive = false;
+        if (onclick.includes(`'${currentFilters.source}'`) && currentFilters.source !== 'all') isActive = true;
+        else if (onclick.includes(`'${currentFilters.dateRange}'`) && currentFilters.dateRange !== 'any') isActive = true;
+        else if (onclick.includes(`'articleTypes'`) && currentFilters.articleTypes.length === 1 && onclick.includes(`'${currentFilters.articleTypes[0]}'`)) isActive = true;
+
+        if (isActive) q.classList.add('active');
+        else q.classList.remove('active');
+    });
 }
 
 function shareSearch() {

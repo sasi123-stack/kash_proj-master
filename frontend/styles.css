@@ -41,7 +41,7 @@
     --shadow-focus: 0 0 0 2px rgba(26, 115, 232, 0.2);
 
     /* Spacing */
-    --header-height: 64px;
+    --header-height: 120px;
     --nav-height: 48px;
     --sidebar-width: 280px;
 
@@ -138,9 +138,13 @@ body {
 
 .header-search {
     flex: 1;
-    max-width: 720px;
+    max-width: 900px !important;
     margin: 0 auto;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
 }
 
 .search-input-wrapper {
@@ -350,6 +354,29 @@ body {
 .header-icon-btn:hover {
     background: var(--bg-hover);
     color: var(--text-primary);
+}
+
+.login-btn {
+    background: var(--primary-blue) !important;
+    color: white !important;
+    padding: 10px 20px !important;
+    /* Larger touch target */
+    border-radius: var(--radius-full) !important;
+    /* Pill shape */
+    font-weight: 500;
+    gap: 8px;
+    margin-left: 8px;
+    box-shadow: var(--shadow-sm);
+}
+
+.login-btn:hover {
+    background: var(--primary-blue-hover) !important;
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.login-btn svg {
+    color: white !important;
 }
 
 .reading-list-btn .reading-list-count {
@@ -4095,14 +4122,9 @@ body.zen-mode .scholar-main {
     transform: translateY(20px);
 }
 
-/* Recent Searches Bar */
+/* Recent Searches Bar - HIDDEN */
 .recent-searches-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 12px;
-    padding: 0 4px;
-    animation: fadeIn 0.5s ease;
+    display: none !important;
 }
 
 .recent-label {
@@ -4247,4 +4269,106 @@ body.zen-mode .scholar-main {
     height: 18px;
     cursor: pointer;
     accent-color: var(--primary-blue);
+}
+
+/* QUICK FILTERS */
+.quick-filters {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    padding-left: 16px;
+    /* Align with input text start */
+    overflow-x: auto;
+    scrollbar-width: none;
+    /* Hide scrollbar Firefox */
+}
+
+.quick-filters::-webkit-scrollbar {
+    display: none;
+    /* Hide scrollbar Chrome/Safari */
+}
+
+.quick-filter-chip {
+    padding: 6px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all var(--transition-fast);
+}
+
+.quick-filter-chip:hover {
+    background: var(--bg-hover);
+    color: var(--primary-blue);
+    border-color: var(--primary-blue-light);
+}
+
+.quick-filter-chip.active {
+    background: var(--primary-blue-light);
+    color: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+/* SEARCH LOADER */
+.search-loader {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-loader.hidden {
+    display: none;
+}
+
+.spinner {
+    animation: rotate 2s linear infinite;
+    width: 20px;
+    height: 20px;
+}
+
+.spinner .path {
+    stroke: var(--primary-blue);
+    stroke-linecap: round;
+    animation: dash 1.5s ease-in-out infinite;
+}
+
+@keyframes rotate {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes dash {
+    0% {
+        stroke-dasharray: 1, 150;
+        stroke-dashoffset: 0;
+    }
+
+    50% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -35;
+    }
+
+    100% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -124;
+    }
+}
+
+/* Widen Search Bar */
+.header-search {
+    max-width: 900px !important;
+    /* Override previous max-width */
+}
+
+/* Ensure no elements overlap */
+.search-input-wrapper {
+    z-index: 1002;
 }
