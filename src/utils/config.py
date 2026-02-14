@@ -97,6 +97,10 @@ class Settings(BaseSettings):
     # Groq
     groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
 
+    # OpenClaw / Generic OpenAI-compatible
+    openclaw_api_key: str = Field(default="sk-openclaw-placeholder", alias="OPENCLAW_API_KEY")
+    openclaw_api_base: str = Field(default="http://localhost:8000/v1", alias="OPENCLAW_API_BASE")
+
     
     # Security
     secret_key: str = Field(default="change-me-in-production", alias="SECRET_KEY")

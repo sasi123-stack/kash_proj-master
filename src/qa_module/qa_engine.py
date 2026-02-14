@@ -6,6 +6,7 @@ from .context_retriever import ContextRetriever
 from .answer_extractor import AnswerExtractor
 from .gemini_generator import GeminiGenerator
 from .groq_generator import GroqGenerator
+from .openclaw_generator import OpenClawGenerator
 
 logger = get_logger(__name__)
 
@@ -18,21 +19,17 @@ class QuestionAnsweringEngine:
         context_retriever: Optional[ContextRetriever] = None,
         answer_extractor: Optional[AnswerExtractor] = None,
         answer_generator: Optional[GeminiGenerator] = None,
-        groq_generator: Optional[GroqGenerator] = None
+        groq_generator: Optional[GroqGenerator] = None,
+        openclaw_generator: Optional[OpenClawGenerator] = None
     ):
-        """Initialize QA engine.
-        
-        Args:
-            context_retriever: Context retrieval component
-            answer_extractor: Answer extraction component
-            answer_generator: LLM-based answer generation component
-        """
+        """Initialize QA engine."""
         self.context_retriever = context_retriever or ContextRetriever()
         self.answer_extractor = answer_extractor or AnswerExtractor()
         self.answer_generator = answer_generator or GeminiGenerator()
         self.groq_generator = groq_generator or GroqGenerator()
+        self.openclaw_generator = openclaw_generator or OpenClawGenerator()
         
-        logger.info("QuestionAnsweringEngine initialized (Gemini & Groq ready)")
+        logger.info("QuestionAnsweringEngine initialized (OpenClaw, Gemini & Groq ready)")
     
     def answer_question(
         self,
@@ -42,18 +39,7 @@ class QuestionAnsweringEngine:
         num_answers: int = 3,
         include_context: bool = True
     ) -> Dict:
-        """Answer a question using retrieval and extraction.
-        
-        Args:
-            question: User question
-            index_name: Index to search ('pubmed_articles', 'clinical_trials', or 'all')
-            num_passages: Number of passages to retrieve
-            num_answers: Number of answers to return
-            include_context: Include context passages in response
-            
-        Returns:
-            Dictionary with answers and metadata
-        """
+        """Answer a question using retrieval and extraction."""
         logger.info(f"Answering question: '{question}'")
         
         # Step 1: Retrieve relevant passages
@@ -73,13 +59,18 @@ class QuestionAnsweringEngine:
             }
         
         # Step 2: Generate/Extract answers from passages
-        
-        # Prefer Groq if configured, else fallback to Gemini
         generated_answer = None
         
-        if self.groq_generator.api_key and self.groq_generator.api_key != "gsk_your_actual_key_here":
+        # Prefer OpenClaw if configured (User requested priority)
+        if self.openclaw_generator and self.openclaw_generator.api_key != "sk-openclaw-placeholder":
+             logger.info("Using OpenClaw for synthesis")
+             generated_answer = self.openclaw_generator.generate_answer(question, passages)
+        
+        # Fallback to Groq
+        elif self.groq_generator.api_key and self.groq_generator.api_key != "gsk_your_actual_key_here":
             logger.info("Using Groq for lightning-fast conversational synthesis")
             generated_answer = self.groq_generator.generate_answer(question, passages)
+        # Fallback to Gemini
         elif self.answer_generator.api_key and self.answer_generator.api_key != "your_gemini_api_key_here":
             logger.info("Using Gemini for conversational synthesis")
             generated_answer = self.answer_generator.generate_answer(question, passages)
