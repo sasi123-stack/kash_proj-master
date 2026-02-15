@@ -146,15 +146,15 @@ async def search_documents(
             
             document_results.append(DocumentResult(
                 id=doc_id,
-                title=source.get("title", ""),
-                abstract=source.get("abstract", ""),
-                score=result.get("score", 0),
+                title=source.get("title") or "No Title",
+                abstract=source.get("abstract") or "No abstract available.",
+                score=result.get("score") or 0.0,
                 source=source_type,
                 metadata={
                     "authors": source.get("authors", []),
                     # For clinical trials, fallback to start_date if publication_date not available
-                    "publication_date": source.get("publication_date") or source.get("start_date"),
-                    "journal": source.get("journal"),
+                    "publication_date": source.get("publication_date") or source.get("start_date") or "N/A",
+                    "journal": source.get("journal") or "N/A",
                     "pmid": source.get("pmid"),
                     "nct_id": source.get("nct_id")
                 }
@@ -216,13 +216,13 @@ async def answer_question(
         answers = []
         for ans in result.get("answers", []):
             answers.append(AnswerResult(
-                answer=ans["answer"],
-                confidence=ans["confidence"],
-                confidence_level=ans["confidence_level"],
-                source_title=ans["title"],
-                source_id=ans["doc_id"],
-                source_type=ans["source_type"],
-                section=ans["section"],
+                answer=ans.get("answer") or "",
+                confidence=ans.get("confidence") or 0.0,
+                confidence_level=ans.get("confidence_level") or "low",
+                source_title=ans.get("title") or "No Title",
+                source_id=ans.get("doc_id") or "unknown",
+                source_type=ans.get("source_type") or "unknown",
+                section=ans.get("section") or "abstract",
                 context=ans.get("context"),
                 journal=ans.get("journal"),
                 publication_date=ans.get("publication_date")
@@ -231,11 +231,11 @@ async def answer_question(
         passages = []
         for passage in result.get("passages", []):
             passages.append(PassageResult(
-                text=passage["text"][:500],  # Truncate long passages
-                score=passage["score"],
-                source_title=passage["title"],
-                source_id=passage["doc_id"],
-                section=passage["section"]
+                text=(passage.get("text") or "")[:500],  # Truncate long passages
+                score=passage.get("score") or 0.0,
+                source_title=passage.get("title") or "No Title",
+                source_id=passage.get("doc_id") or "unknown",
+                section=passage.get("section") or "abstract"
             ))
         
         qa_time_ms = (time.time() - start_time) * 1000
@@ -304,11 +304,11 @@ async def batch_answer_questions(
             
             passages = [
                 PassageResult(
-                    text=passage["text"][:500],
-                    score=passage["score"],
-                    source_title=passage["title"],
-                    source_id=passage["doc_id"],
-                    section=passage["section"]
+                    text=(passage.get("text") or "")[:500],
+                    score=passage.get("score") or 0.0,
+                    source_title=passage.get("title") or "No Title",
+                    source_id=passage.get("doc_id") or "unknown",
+                    section=passage.get("section") or "abstract"
                 )
                 for passage in result.get("passages", [])
             ]
@@ -369,15 +369,15 @@ async def get_document(
         
         response = DocumentResponse(
             id=document_id,
-            title=source.get("title", ""),
+            title=source.get("title") or "No Title",
             abstract=source.get("abstract"),
             full_text=full_text,
             source=source_type,
             metadata={
                 "authors": source.get("authors", []),
                 # For clinical trials, fallback to start_date if publication_date not available
-                "publication_date": source.get("publication_date") or source.get("start_date"),
-                "journal": source.get("journal"),
+                "publication_date": source.get("publication_date") or source.get("start_date") or "N/A",
+                "journal": source.get("journal") or "N/A",
                 "pmid": source.get("pmid"),
                 "nct_id": source.get("nct_id"),
                 "study_type": source.get("study_type"),

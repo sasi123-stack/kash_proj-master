@@ -23,10 +23,10 @@ class DocumentResult(BaseModel):
     """Model for a single document result."""
     
     id: str = Field(..., description="Document ID")
-    title: str = Field(..., description="Document title")
+    title: str = Field("No Title", description="Document title")
     abstract: Optional[str] = Field(None, description="Document abstract")
-    score: float = Field(..., description="Relevance score")
-    source: str = Field(..., description="Source: 'pubmed' or 'clinical_trials'")
+    score: float = Field(0.0, description="Relevance score")
+    source: str = Field("unknown", description="Source: 'pubmed' or 'clinical_trials'")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 
@@ -53,12 +53,12 @@ class AnswerResult(BaseModel):
     """Model for a single answer result."""
     
     answer: str = Field(..., description="Extracted answer text")
-    confidence: float = Field(..., description="Confidence score")
-    confidence_level: str = Field(..., description="Confidence level: high/medium/low/very_low")
-    source_title: str = Field(..., description="Source document title")
-    source_id: str = Field(..., description="Source document ID")
-    source_type: str = Field(..., description="Source type: 'pubmed' or 'clinical_trials'")
-    section: str = Field(..., description="Document section containing the answer")
+    confidence: float = Field(0.0, description="Confidence score")
+    confidence_level: str = Field("low", description="Confidence level: high/medium/low/very_low")
+    source_title: str = Field("No Title", description="Source document title")
+    source_id: str = Field("unknown", description="Source document ID")
+    source_type: str = Field("unknown", description="Source type: 'pubmed' or 'clinical_trials'")
+    section: str = Field("abstract", description="Document section containing the answer")
     context: Optional[str] = Field(None, description="Surrounding context")
     journal: Optional[str] = Field(None, description="Journal name or source")
     publication_date: Optional[str] = Field(None, description="Publication date")
@@ -67,11 +67,11 @@ class AnswerResult(BaseModel):
 class PassageResult(BaseModel):
     """Model for a retrieved passage."""
     
-    text: str = Field(..., description="Passage text")
-    score: float = Field(..., description="Relevance score")
-    source_title: str = Field(..., description="Source document title")
-    source_id: str = Field(..., description="Source document ID")
-    section: str = Field(..., description="Document section")
+    text: str = Field("", description="Passage text")
+    score: float = Field(0.0, description="Relevance score")
+    source_title: str = Field("No Title", description="Source document title")
+    source_id: str = Field("unknown", description="Source document ID")
+    section: str = Field("abstract", description="Document section")
 
 
 class QuestionResponse(BaseModel):
