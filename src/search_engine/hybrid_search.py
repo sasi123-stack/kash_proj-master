@@ -159,13 +159,32 @@ class HybridSearchEngine:
                 }
             }
 
+        # Build script for vector similarity
+        # ES uses cosineSimilarity, OpenSearch requires manual dot product in Painless
+        is_opensearch = getattr(self.es_client, '_is_opensearch', False)
+        
+        if is_opensearch:
+            # Manual dot product for OpenSearch compatibility
+            script_source = (
+                f"double dot = 0; "
+                f"if (doc.containsKey('{embedding_field}') && doc['{embedding_field}'].size() > 0) {{ "
+                f"  for (int i = 0; i < params.query_vector.length; i++) {{ "
+                f"    dot += (double)params.query_vector[i] * (double)doc['{embedding_field}'][i]; "
+                f"  }} "
+                f"}} "
+                f"return dot + 1.0;"
+            )
+        else:
+            # Standard Elasticsearch cosine similarity
+            script_source = f"cosineSimilarity(params.query_vector, '{embedding_field}') + 1.0"
+
         es_query = {
             'size': size,
             'query': {
                 'script_score': {
                     'query': base_query,
                     'script': {
-                        'source': f"cosineSimilarity(params.query_vector, '{embedding_field}') + 1.0",
+                        'source': script_source,
                         'params': {
                             'query_vector': query_embedding.tolist()
                         }
