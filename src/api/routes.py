@@ -151,7 +151,7 @@ async def search_documents(
                 score=result.get("score") or 0.0,
                 source=source_type,
                 metadata={
-                    "authors": source.get("authors", []),
+                    "authors": source.get("authors") or [],
                     # For clinical trials, fallback to start_date if publication_date not available
                     "publication_date": source.get("publication_date") or source.get("start_date") or "N/A",
                     "journal": source.get("journal") or "N/A",
