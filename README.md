@@ -1,248 +1,38 @@
 ---
-title: BioSense AI API
+title: BioSense AI
 emoji: 🔬
-colorFrom: indigo
+colorFrom: cyan
 colorTo: blue
 sdk: docker
-app_port: 7860
+app_port: 8000
 ---
 
-# 🔬 BioSense AI - Biomedical Search Engine
+# 🔬 BioSense AI - Intelligent Biomedical Research Engine
 
-An intelligent, Google Scholar-style semantic search engine for biomedical literature and clinical trials powered by BioBERT and AI.
+BioSense AI is a state-of-the-art, evidence-based research platform designed to search through millions of PubMed articles and Clinical Trials. Powered by **OpenClaw RAG** and **Llama 3.3 70B**, it provides lightning-fast semantic search and precise medical question-answering.
 
-![BioSense AI](https://img.shields.io/badge/BioSense-AI-blue?style=for-the-badge)
-![Python](https://img.shields.io/badge/Python-3.9+-green?style=flat-square)
-![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=flat-square)
-![Elasticsearch](https://img.shields.io/badge/Elasticsearch-8.11-yellow?style=flat-square)
-
-## 📊 What's Inside
-
-- **1,800+ Documents**: PubMed articles + clinical trials indexed
-- **20+ Medical Topics**: COVID-19, cancer, diabetes, Alzheimer's, HIV, cardiovascular, and more
-- **Smart Search**: Hybrid keyword + semantic search with BioBERT embeddings
-- **Question Answering**: Ask medical questions and get evidence-based answers
-- **Trending Topics**: Explore what's popular in biomedical research
+[![Website](https://img.shields.io/badge/Website-biomed--scholar.web.app-blue?style=for-the-badge&logo=firebase)](https://biomed-scholar.web.app/)
+[![AI Powered](https://img.shields.io/badge/AI--Agent-Groq%20%2F%20Llama%203-orange?style=for-the-badge)](https://groq.com/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 ---
 
-## ✨ Features
+## 🚀 Key Features
 
-### 🔍 Search Capabilities
-| Feature | Description |
-|---------|-------------|
-| **Semantic Search** | AI-powered search understands medical context and synonyms |
-| **Hybrid Search** | Combines keyword matching with semantic understanding |
-| **Search History** | Quick access to your recent searches |
-| **Autocomplete** | Smart suggestions as you type |
-| **Advanced Search** | Boolean operators, exact phrases, author/journal filters |
-| **Search Highlighting** | Matching terms highlighted in results |
+### 🧠 Advanced AI Agent & RAG
+- **Llama 3.3 70B (Via Groq)**: Blazing fast responses (up to 800 tokens/sec) for biomedical Q&A.
+- **OpenClaw Integration**: A robust agentic framework that handles complex reasoning and knowledge retrieval.
+- **Evidence-Based Answers**: Every answer is grounded in actual PubMed or ClinicalTrials.gov data with direct citations.
 
-### 📚 Results & Export
-| Feature | Description |
-|---------|-------------|
-| **Save/Bookmark** | Save articles to your reading list |
-| **Export Results** | Download as CSV or BibTeX |
-| **Citation Generator** | One-click citations in APA, MLA, Chicago, BibTeX |
-| **Share Article** | One-click sharing via Web Share API or clipboard |
-| **Pagination** | Navigate through results with keyboard arrows |
-| **View Modes** | List view or compact view |
+### 🔍 Search & Discovery
+- **Hybrid Semantic Search**: Combines traditional keyword matching with deep semantic understanding using **BioBERT**.
+- **Real-time Analytics**: Trending topics and publication charts to visualize the latest medical breakthroughs.
+- **Search Highlighting**: Instant visual feedback on why a result matches your query.
 
-### 🎛️ Filters
-| Filter | Options |
-|--------|---------|
-| **Source Type** | All Sources, PubMed, Clinical Trials |
-| **Date Range** | Any time, Since 2024/2023/2020, Custom range |
-| **Article Type** | Research, Review, Meta-analysis, Case Study, Clinical Trial |
-| **Language** | English, Spanish, German, French, Chinese, Japanese |
-| **Sort By** | Relevance, Date (newest/oldest), Most Cited |
-
-### 📈 Analytics
-- **Trending Topics**: See what's popular in biomedical research
-- **Publication Trends**: Visualize research trends over time
-- **Related Searches**: Discover related search terms
-
-### ⌨️ Keyboard Shortcuts
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl + K` | Focus search bar |
-| `Ctrl + Shift + F` | Open advanced search |
-| `1` / `2` / `3` | Switch to Articles / Q&A / Trends tab |
-| `B` | Toggle reading list |
-| `D` | Toggle dark mode |
-| `←` / `→` | Navigate pages |
-| `?` | Show keyboard shortcuts |
-| `Escape` | Close modals |
-
----
-
-## 🚀 Quick Start
-
-### 1. Start Docker Services
-
-```powershell
-cd docker
-docker-compose up -d
-```
-
-This starts:
-- Elasticsearch (port 9201)
-- Redis (port 6380)
-- PostgreSQL (port 5433)
-
-### 2. Install Dependencies
-
-```powershell
-pip install -r requirements.txt
-```
-
-### 3. Start Backend API
-
-Open a **new terminal**:
-
-```powershell
-uvicorn src.api.app:app --host 0.0.0.0 --port 8000 --reload
-```
-
-Wait for: `✅ API ready to accept requests`
-
-### 4. Start Frontend
-
-Open **another new terminal**:
-
-```powershell
-cd frontend
-python -m http.server 8080
-```
-
-### 5. Open in Browser
-
-Go to: **http://localhost:8080**
-
----
-
-## 🎯 How to Use
-
-### 📖 Search Tab
-1. Type your query (e.g., "COVID-19 treatment")
-2. Use filters on the left sidebar:
-   - Select source: PubMed, Clinical Trials, or Both
-   - Choose date range
-   - Adjust search mode slider (keyword ↔ semantic)
-3. View results with:
-   - Article details, authors, publication date
-   - Save to reading list
-   - Generate citations
-   - View on PubMed/ClinicalTrials.gov
-
-### ❓ Ask Questions Tab
-1. Type a medical question (e.g., "What are the symptoms of diabetes?")
-2. Select source and number of answers (1, 3, or 5)
-3. Get evidence-based answers with:
-   - Confidence scores
-   - Source citations
-   - Supporting evidence passages
-
-### 📈 Trends Tab
-- Explore trending research topics
-- See growth percentages
-- Click topics to search
-- View publication trend charts
-
-### 📚 Reading List
-- Click bookmark icon on any article to save
-- Access from the 🔖 icon in header
-- Export as CSV or BibTeX
-- Generate citations for saved articles
-
----
-
-## 🛑 How to Stop
-
-```powershell
-# Stop Docker services
-cd docker
-docker-compose down
-
-# Stop API & Frontend: Press Ctrl+C in their terminals
-```
-
----
-
-## 🔧 Troubleshooting
-
-### Port already in use?
-```powershell
-# Kill process on port 8000
-Stop-Process -Id (Get-NetTCPConnection -LocalPort 8000).OwningProcess -Force
-
-# Kill process on port 8080
-Stop-Process -Id (Get-NetTCPConnection -LocalPort 8080).OwningProcess -Force
-```
-
-### Elasticsearch not connecting?
-```powershell
-# Check if Docker is running
-docker ps
-
-# Restart Docker services
-cd docker
-docker-compose restart
-```
-
-### Need to reindex data?
-```powershell
-python scripts/ingest_full_dataset.py
-```
-
----
-
-## 📁 Project Structure
-
-```
-kash_proj/
-├── src/                    # Source code
-│   ├── api/               # FastAPI backend
-│   ├── search_engine/     # Hybrid search
-│   ├── qa_module/         # Question answering
-│   └── nlp_engine/        # BioBERT models
-├── frontend/              # Web interface
-│   ├── index.html         # Main HTML with all components
-│   ├── app.js             # JavaScript (search, bookmarks, citations)
-│   └── styles.css         # Google Scholar-style CSS
-├── docker/                # Docker services
-│   └── docker-compose.yml
-├── scripts/               # Utility scripts
-│   ├── ingest_full_dataset.py
-│   └── check_index_status.py
-├── data/                  # Cached data
-└── tests/                 # Integration tests
-```
-
----
-
-## 🧪 Run Tests
-
-```powershell
-pytest tests/test_integration.py -v
-```
-
-All tests should pass ✅
-
----
-
-## 📊 Check System Status
-
-```powershell
-# Check indexed documents
-python scripts/check_index_status.py
-
-# Check API health
-curl http://localhost:8000/api/v1/health
-
-# Check statistics
-curl http://localhost:8000/api/v1/statistics
-```
+### 📚 Researcher Tools
+- **Personal Reading List**: Save articles and sync them locally for later reading.
+- **Citation Generator**: Instant support for APA, MLA, Chicago, and BibTeX.
+- **Multi-Format Export**: Export your curated research as CSV or BibTeX files.
 
 ---
 
@@ -250,88 +40,83 @@ curl http://localhost:8000/api/v1/statistics
 
 | Layer | Technology |
 |-------|------------|
-| **Backend** | Python 3.9+, FastAPI, Uvicorn |
-| **NLP/AI** | PyTorch, Transformers, BioBERT |
-| **Search** | Elasticsearch 8.11.0 |
-| **Cache** | Redis 7 |
-| **Database** | PostgreSQL |
-| **Frontend** | HTML5, CSS3, JavaScript (ES6+) |
-| **Deployment** | Docker, Docker Compose |
+| **AI Architecture** | OpenClaw, RAG (Retrieval-Augmented Generation) |
+| **LLM Inference** | **Groq** (Llama 3.3 70B Versatile) |
+| **Backend** | Python 3.10+, FastAPI, Uvicorn |
+| **Search Engine** | Elasticsearch 8, BioBERT Embeddings |
+| **Frontend** | Vanilla JavaScript (ES6+), CSS3 (Modern Glassmorphism Design) |
+| **Hosting** | Firebase (Frontend), Hugging Face Spaces (Backend API) |
+| **Database/Cache** | PostgreSQL, Redis |
 
 ---
 
-## 📝 Sample Queries to Try
+## ⚙️ Setup & Installation
 
-### Search Queries
-- `COVID-19 vaccine efficacy`
-- `cancer immunotherapy`
-- `diabetes treatment 2024`
-- `CRISPR gene editing`
-- `mRNA vaccine technology`
+### 1. Prerequisites
+- Docker & Docker Compose
+- Python 3.10+
+- [Groq API Key](https://console.groq.com/) (Required for AI Agent)
 
-### Questions
-- What are the symptoms of COVID-19?
-- How is diabetes treated?
-- What causes Alzheimer's disease?
-- What are the side effects of chemotherapy?
-- How does HIV affect the immune system?
+### 2. Configure Environment
+Create a `.env` file in the root directory:
+```bash
+GROQ_API_KEY=your_groq_key_here
+OPENCLAW_API_BASE=https://api.groq.com/openai/v1
+ELASTICSEARCH_HOST=localhost
+ELASTICSEARCH_PORT=9201
+```
 
----
+### 3. Run Services (Docker)
+```powershell
+# Start Elasticsearch, Redis, and PostgreSQL
+cd docker
+docker-compose up -d
+```
 
-## 🌙 Theme Support
+### 4. Start Backend & Frontend
+```powershell
+# Install dependencies
+pip install -r requirements.txt
 
-BioSense AI supports both **Light** and **Dark** themes:
-- Toggle with the sun/moon icon in the header
-- Or press `D` key
-- Preference is saved automatically
+# Run API
+uvicorn src.api.app:app --reload
 
----
-
-## 📱 Responsive Design
-
-The UI is fully responsive and works on:
-- 🖥️ Desktop (full sidebar, all features)
-- 💻 Laptop (adaptive layout)
-- 📱 Mobile (collapsed sidebar, touch-friendly)
-
----
-
-## 🔒 Privacy
-
-- **No account required** - works without login
-- **Local storage only** - reading list and preferences saved in your browser
-- **No tracking** - your searches stay private
+# Run Frontend (Simple Server)
+cd frontend
+python -m http.server 8080
+```
 
 ---
 
-## 🤝 Contributing
+## 🌐 Deployment
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+### Frontend (Firebase)
+BioSense AI is deployed to Firebase Hosting.
+```powershell
+firebase deploy
+```
+
+### Backend (Hugging Face)
+The backend is containerized and hosted on Hugging Face Spaces.
+- **Space URL**: [sasidhara123-biomed-scholar-api](https://huggingface.co/spaces/sasidhara123/biomed-scholar-api)
+- Uses a Docker SDK for seamless integration.
+
+---
+
+## ⌨️ Keyboard Shortcuts
+| Key | Action |
+|-----|--------|
+| `Ctrl + K` | Focus Search Bar |
+| `B` | Toggle Reading List |
+| `D` | Toggle Dark Mode |
+| `?` | Help / Shortcuts |
+| `1 / 2 / 3`| Switch Tabs (Search / QA / Trends) |
 
 ---
 
 ## 📄 License
-
-This project is licensed under the MIT License.
-
----
-
-## 👨‍💻 Author
-
-**Sasidhara Kashyap Ch**
-
-Made with ❤️ using BioBERT, Elasticsearch, and FastAPI
+Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-## 🙏 Acknowledgments
-
-- [BioBERT](https://github.com/dmis-lab/biobert) - Biomedical language model
-- [PubMed](https://pubmed.ncbi.nlm.nih.gov/) - Biomedical literature database
-- [ClinicalTrials.gov](https://clinicaltrials.gov/) - Clinical trials registry
-- [Elasticsearch](https://www.elastic.co/) - Search engine
-- [FastAPI](https://fastapi.tiangolo.com/) - Modern Python web framework
+**Developed with ❤️ by Sasidhara Kashyap Ch**
