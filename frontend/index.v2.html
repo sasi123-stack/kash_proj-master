@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="BioSense AI - Search biomedical literature, PubMed articles, and clinical trials with AI-powered semantic search">
-    <title>BioSense AI | Evidence-Based Research Engine</title>
+        content="BioMed Scholar - Search biomedical literature, PubMed articles, and clinical trials with AI-powered semantic search">
+    <title>BioMed Scholar | Evidence-Based Research Engine</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="chat_styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,23 +14,9 @@
         href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap"
         rel="stylesheet">
 
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#0056D2">
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('Service Worker registered!'))
-                    .catch(err => console.log('SW registration failed:', err));
-            });
-        }
-    </script>
 </head>
 
 <body>
@@ -41,24 +27,31 @@
     <header class="scholar-header glass-panel">
         <div class="header-left">
             <a href="#" class="scholar-logo" onclick="location.reload(); return false;">
-                <svg class="logo-dna" width="40" height="28" viewBox="0 0 40 28" fill="none">
-                    <rect width="40" height="28" rx="8" fill="#0056D2" />
-                    <!-- DNA Helix in negative space (White) -->
-                    <path d="M12 6C12 6 16 10 20 10C24 10 28 6 28 6" stroke="white" stroke-width="2.5"
+                <svg class="logo-dna" width="36" height="36" viewBox="0 0 48 48" fill="none">
+                    <defs>
+                        <linearGradient id="logoGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#4285F4" />
+                            <stop offset="100%" style="stop-color:#34A853" />
+                        </linearGradient>
+                        <linearGradient id="logoGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#EA4335" />
+                            <stop offset="100%" style="stop-color:#FBBC05" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M12 8C12 8 18 14 24 14C30 14 36 8 36 8" stroke="url(#logoGrad1)" stroke-width="3"
                         stroke-linecap="round" />
-                    <path d="M12 14C12 14 16 18 20 18C24 18 28 14 28 14" stroke="white" stroke-width="2.5"
+                    <path d="M12 20C12 20 18 26 24 26C30 26 36 20 36 20" stroke="url(#logoGrad2)" stroke-width="3"
                         stroke-linecap="round" />
-                    <path d="M12 22C12 22 16 26 20 26C24 26 28 22 28 22" stroke="white" stroke-width="2.5"
+                    <path d="M12 32C12 32 18 38 24 38C30 38 36 32 36 32" stroke="url(#logoGrad1)" stroke-width="3"
                         stroke-linecap="round" />
-                    <circle cx="16" cy="8" r="1.5" fill="white" />
-                    <circle cx="24" cy="8" r="1.5" fill="white" />
-                    <circle cx="16" cy="16" r="1.5" fill="white" />
-                    <circle cx="24" cy="16" r="1.5" fill="white" />
-                    <circle cx="16" cy="24" r="1.5" fill="white" />
-                    <circle cx="24" cy="24" r="1.5" fill="white" />
+                    <circle cx="18" cy="11" r="2.5" fill="#4285F4" />
+                    <circle cx="30" cy="11" r="2.5" fill="#34A853" />
+                    <circle cx="18" cy="23" r="2.5" fill="#EA4335" />
+                    <circle cx="30" cy="23" r="2.5" fill="#FBBC05" />
+                    <circle cx="18" cy="35" r="2.5" fill="#4285F4" />
+                    <circle cx="30" cy="35" r="2.5" fill="#34A853" />
                 </svg>
-                <span class="logo-text">BioSense <span class="logo-scholar">AI</span></span>
-                <span class="beta-tag" style="margin-left: 10px; vertical-align: middle;">BETA</span>
+                <span class="logo-text">BioMed <span class="logo-scholar">Scholar</span></span>
             </a>
         </div>
 
@@ -71,10 +64,6 @@
                 </svg>
                 <input type="text" id="header-search-input" placeholder="Search biomedical literature..."
                     autocomplete="off">
-                <button id="clear-search-btn" class="clear-input-btn hidden" onclick="clearSearchInput()"
-                    title="Clear search">
-                    &times;
-                </button>
                 <!-- Autocomplete Dropdown -->
                 <div id="autocomplete-dropdown" class="autocomplete-dropdown hidden">
                     <div class="autocomplete-section" id="search-history-section">
@@ -101,7 +90,7 @@
                         <div id="suggestion-items"></div>
                     </div>
                 </div>
-                <button class="search-icon-btn" onclick="openAdvancedSearch()" title="Advanced Search">
+                <button class="advanced-search-btn" onclick="openAdvancedSearch()" title="Advanced Search">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="4" y1="21" x2="4" y2="14" />
                         <line x1="4" y1="10" x2="4" y2="3" />
@@ -119,32 +108,33 @@
                         <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
                     </svg>
                 </div>
-                <button id="header-search-btn" class="search-btn" onclick="performSearch()" title="Search">
+                <button id="header-search-btn" class="search-btn" title="Search">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8" />
                         <path d="M21 21l-4.35-4.35" />
                     </svg>
                 </button>
             </div>
+
+            <!-- Quick Filters -->
+            <div class="quick-filters">
+                <button class="quick-filter-chip" onclick="toggleQuickFilter('dateRange', '2024')">Since 2024</button>
+                <button class="quick-filter-chip" onclick="toggleQuickFilter('source', 'clinical_trials')">Clinical
+                    Trials</button>
+                <button class="quick-filter-chip" onclick="toggleQuickFilter('articleTypes', 'review')">Review
+                    Articles</button>
+                <button class="quick-filter-chip" onclick="toggleQuickFilter('dateRange', '2020')">Last 5 Years</button>
+            </div>
+            <div id="recent-searches-bar" class="recent-searches-header hidden">
+                <div id="recent-chips" class="recent-chips"></div>
+            </div>
         </div>
 
         <div class="header-right">
             <div class="header-stats" id="header-stats">
-                <div class="stat-item" title="PubMed Articles">
-                    <span class="stats-count pubmed-count-val">---</span>
-                    <span class="stats-label">PubMed</span>
-                </div>
-                <div class="stat-item" title="Clinical Trials">
-                    <span class="stats-count trials-count-val">---</span>
-                    <span class="stats-label">Trials</span>
-                </div>
-                <div class="stat-item" title="Total Articles">
-                    <span class="stats-count total-docs-count-val">---</span>
-                    <span class="stats-label">Total</span>
-                </div>
+                <span class="stats-count" id="total-docs-count">---</span>
+                <span class="stats-label">articles indexed</span>
             </div>
-
-
 
             <!-- Reading List Button -->
             <button class="header-icon-btn reading-list-btn" onclick="toggleReadingList()" title="Reading List">
@@ -195,25 +185,6 @@
                 </svg>
             </button>
 
-
-            <!-- Search History -->
-            <div class="notification-container">
-                <button class="header-icon-btn history-btn" onclick="toggleHistoryDropdown()" title="Search History">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </button>
-                <div class="notification-dropdown history-dropdown hidden" id="history-header-dropdown">
-                    <div class="notification-header">
-                        <h3>Search History</h3>
-                        <button class="mark-read-btn" onclick="clearHistory()">Clear all</button>
-                    </div>
-                    <div class="notification-list" id="history-header-list">
-                        <!-- History items will be injected here -->
-                    </div>
-                </div>
-            </div>
-
             <!-- Keyboard Shortcuts -->
             <button class="header-icon-btn" onclick="showKeyboardShortcuts()" title="Keyboard Shortcuts (?)">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -221,7 +192,6 @@
                     <path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M8 16h8" />
                 </svg>
             </button>
-
 
             <button class="header-icon-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
                 <svg id="theme-icon-sun" class="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -250,7 +220,6 @@
                 </svg>
                 <span>Login</span>
             </button>
-
 
 
         </div>
@@ -308,7 +277,7 @@
                         </svg>
                     </button>
                 </div>
-
+                <span class="beta-tag">BETA</span>
             </div>
         </div>
     </nav>
@@ -527,7 +496,7 @@
                         <label class="checkbox-option">
                             <input type="checkbox" id="use-reranking" checked>
                             <span>AI Re-ranking</span>
-                            <span class="beta-tag" style="padding: 2px 6px; font-size: 8px;">BETA</span>
+                            <span class="option-badge">Recommended</span>
                         </label>
                         <label class="checkbox-option">
                             <input type="checkbox" id="highlight-matches" checked>
@@ -558,22 +527,15 @@
                         <div class="stat-item">
                             <span class="stat-icon">📄</span>
                             <div class="stat-info">
-                                <span class="stat-value pubmed-count-val">-</span>
+                                <span class="stat-value" id="pubmed-count">-</span>
                                 <span class="stat-label">PubMed Articles</span>
                             </div>
                         </div>
                         <div class="stat-item">
                             <span class="stat-icon">🔬</span>
                             <div class="stat-info">
-                                <span class="stat-value trials-count-val">-</span>
+                                <span class="stat-value" id="trials-count">-</span>
                                 <span class="stat-label">Clinical Trials</span>
-                            </div>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-icon">📚</span>
-                            <div class="stat-info">
-                                <span class="stat-value total-docs-count-val">-</span>
-                                <span class="stat-label">Total Articles</span>
                             </div>
                         </div>
                     </div>
@@ -597,60 +559,29 @@
                         <div id="selection-toolbar" class="selection-toolbar hidden">
                             <span class="selection-count">0 selected</span>
                             <div class="selection-actions">
-                                <button class="results-save-all" onclick="bulkSave()"><svg width="14" height="14"
-                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <button onclick="bulkSave()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2">
                                         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
                                     </svg> Save All</button>
-                                <button onclick="bulkExport('csv')"><svg width="14" height="14" viewBox="0 0 24 24"
+                                <button onclick="bulkExport()"><svg width="14" height="14" viewBox="0 0 24 24"
                                         fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                         <polyline points="7 10 12 15 17 10" />
                                         <line x1="12" y1="15" x2="12" y2="3" />
-                                    </svg> CSV</button>
-                                <button onclick="bulkExport('bibtex')">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                        <polyline points="14 2 14 8 20 8" />
-                                    </svg> BibTeX</button>
-
-                                <button onclick="copySelectedUrls()" title="Copy all selected URLs">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <path
-                                            d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-                                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-                                    </svg> URLs</button>
+                                    </svg> Export</button>
                                 <button onclick="cancelSelection()" class="cancel-btn">Cancel</button>
                             </div>
                         </div>
 
                         <div class="results-actions-header">
-                            <button class="results-action-btn results-save-all" onclick="saveAllResults()"
-                                title="Save All Results">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-                                </svg>
-                                Save All
-                            </button>
-                            <button class="results-action-btn" onclick="exportResults('csv')" title="Export to CSV">
+                            <button class="results-action-btn" onclick="exportResults('csv')" title="Export Results">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                     <polyline points="7 10 12 15 17 10" />
                                     <line x1="12" y1="15" x2="12" y2="3" />
                                 </svg>
-                                CSV
-                            </button>
-                            <button class="results-action-btn" onclick="exportResults('bibtex')"
-                                title="Export to BibTeX">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                    <polyline points="14 2 14 8 20 8" />
-                                </svg>
-                                BibTeX
+                                Export
                             </button>
                             <button class="results-action-btn" onclick="window.print()" title="Print">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -662,73 +593,16 @@
                                 </svg>
                                 Print
                             </button>
-
                         </div>
                     </div>
 
                     <!-- Related Searches -->
                     <div class="related-searches hidden" id="related-searches">
-                        <h3>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <circle cx="11" cy="11" r="8" />
-                                <path d="M21 21l-4.35-4.35" />
-                            </svg>
-                            Related Research Topics
-                        </h3>
-                        <div class="related-tags-container" id="related-tags"></div>
+                        <span class="related-label">Related searches:</span>
+                        <div class="related-tags" id="related-tags"></div>
                     </div>
 
-                    <div id="skeleton-loader" class="hidden">
-                        <!-- skeletons... -->
-                    </div>
-
-                    <!-- Enhanced Results Toolbar -->
-                    <div class="results-toolbar hidden" id="results-toolbar">
-                        <div class="results-filter-wrapper">
-                            <svg class="results-filter-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8" />
-                                <path d="M21 21l-4.35-4.35" />
-                            </svg>
-                            <input type="text" id="results-filter-input" class="results-filter-input"
-                                placeholder="Filter results by keyword..." oninput="filterResultsList()">
-                        </div>
-
-                        <button class="toolbar-btn" onclick="toggleAllAbstracts()" id="expand-all-btn"
-                            title="Expand All Abstracts">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <polyline points="7 13 12 18 17 13" />
-                                <polyline points="7 6 12 11 17 6" />
-                            </svg>
-                            Expand All
-                        </button>
-
-                        <div class="view-toggle-group">
-                            <button class="view-btn active" onclick="setViewMode('list')" id="view-list-btn"
-                                title="Detailed List View">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <line x1="8" y1="6" x2="21" y2="6" />
-                                    <line x1="8" y1="12" x2="21" y2="12" />
-                                    <line x1="8" y1="18" x2="21" y2="18" />
-                                    <line x1="3" y1="6" x2="3.01" y2="6" />
-                                    <line x1="3" y1="12" x2="3.01" y2="12" />
-                                    <line x1="3" y1="18" x2="3.01" y2="18" />
-                                </svg>
-                            </button>
-                            <button class="view-btn" onclick="setViewMode('compact')" id="view-compact-btn"
-                                title="Compact List View">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <line x1="3" y1="6" x2="21" y2="6" />
-                                    <line x1="3" y1="12" x2="21" y2="12" />
-                                    <line x1="3" y1="18" x2="21" y2="18" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
+                    <!-- Skeleton Loader (Hidden by default) -->
 
                     <div id="search-results" class="results-list">
                         <!-- Welcome state -->
@@ -743,46 +617,9 @@
                             <h2>Search Biomedical Literature</h2>
                             <p>Search millions of PubMed articles and clinical trials with AI-powered semantic search
                             </p>
-
-                            <div class="suggested-queries">
-                                <!-- Dynamically populated by app.js -->
-                            </div>
-
                             <div class="keyboard-hint">
                                 <span>Pro tip: Press <kbd>Ctrl</kbd> + <kbd>K</kbd> to focus search</span>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Floating Quick Filters -->
-                    <div class="quick-filters hidden" id="quick-filters">
-                        <span class="quick-filters-label">Quick Filters:</span>
-                        <button class="quick-filter-chip" onclick="toggleQuickFilter('source', 'all')">All</button>
-                        <button class="quick-filter-chip"
-                            onclick="toggleQuickFilter('source', 'pubmed')">PubMed</button>
-                        <button class="quick-filter-chip"
-                            onclick="toggleQuickFilter('source', 'clinical_trials')">Trials</button>
-                        <div class="quick-filter-divider"></div>
-                        <button class="quick-filter-chip"
-                            onclick="toggleQuickFilter('dateRange', '2024')">2024+</button>
-                        <button class="quick-filter-chip"
-                            onclick="toggleQuickFilter('articleTypes', 'review')">Reviews</button>
-                        <div class="quick-filter-divider"></div>
-                        <div class="quick-alpha-container" title="Adjust balance between Keyword and Semantic search">
-                            <span class="quick-filter-label" style="margin-right: 8px;">Mode:</span>
-                            <span class="quick-alpha-text">Keyword</span>
-                            <input type="range" id="quick-alpha-slider" min="0" max="100" value="50" step="10"
-                                onchange="handleQuickAlpha(this.value)">
-                            <span class="quick-alpha-text">Semantic</span>
-                        </div>
-                        <div class="quick-filter-divider"></div>
-                        <button class="quick-filter-clear" onclick="clearAllQuickFilters()" title="Reset all filters">
-                            Clear All
-                        </button>
-                        <div class="quick-filter-divider"></div>
-                        <div class="quick-stats-badge" title="Total Articles in Index">
-                            <span class="badge-label">Total:</span>
-                            <span class="badge-value total-docs-count-val">---</span>
                         </div>
                     </div>
 
@@ -878,115 +715,49 @@
 
                 <!-- Trends Tab -->
                 <div id="trends-tab" class="tab-content">
-                    <div class="trends-dashboard">
-                        <!-- Dashboard Header -->
-                        <div class="trends-header-new">
-                            <div class="header-left">
-                                <h2>🧬 Research Insights</h2>
-                                <p>Real-time analysis of biomedical literature and clinical trends</p>
-                            </div>
-                            <div class="header-right">
-                                <div class="stats-mini">
-                                    <div class="stat-mini-item">
-                                        <span class="label">Total Indexed</span>
-                                        <span class="value">2.4M+</span>
-                                    </div>
-                                    <div class="stat-mini-item">
-                                        <span class="label">Daily Growth</span>
-                                        <span class="value positive">+1.2k</span>
-                                    </div>
-                                </div>
+                    <div class="trends-container">
+                        <div class="trends-header">
+                            <h2>📈 Research Insights Dashboard</h2>
+                            <p>Dynamic analysis of publication trends and hot topics</p>
+                        </div>
+
+                        <div class="trends-visual-section"
+                            style="margin-bottom: 30px; background: var(--bg-primary); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); height: 350px;">
+                            <canvas id="trendsChart"></canvas>
+                        </div>
+
+                        <div class="trends-grid" id="trends-grid">
+                            <!-- Trend cards removed as per request -->
+                            <div class="empty-state">
+                                <p>Enter a search query to see trends</p>
                             </div>
                         </div>
 
-                        <!-- Top Analytics Row -->
-                        <div class="analytics-row top-metrics">
-                            <div class="metric-card">
-                                <div class="metric-icon blue"><svg width="24" height="24" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                                    </svg></div>
-                                <div class="metric-info">
-                                    <span class="metric-label">Results Processed</span>
-                                    <span class="metric-value" id="trends-processed-count">0</span>
-                                </div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-icon green"><svg width="24" height="24" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-                                        <polyline points="16 7 22 7 22 13" />
-                                    </svg></div>
-                                <div class="metric-info">
-                                    <span class="metric-label">Relativity Score</span>
-                                    <span class="metric-value">94.2%</span>
-                                </div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-icon purple"><svg width="24" height="24" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 2v10l4.5 4.5" />
-                                        <circle cx="12" cy="12" r="10" />
-                                    </svg></div>
-                                <div class="metric-info">
-                                    <span class="metric-label">Avg. Pub Age</span>
-                                    <span class="metric-value">2.4 Yrs</span>
-                                </div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-icon orange"><svg width="24" height="24" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                                    </svg></div>
-                                <div class="metric-info">
-                                    <span class="metric-label">Active Trials</span>
-                                    <span class="metric-value">128</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Charts Section -->
-                        <div class="analytics-row charts-grid">
-                            <div class="chart-card main-trend">
-                                <div class="card-header">
-                                    <h3>📈 Publication over Time</h3>
-                                    <div class="card-actions">
-                                        <button class="active">Yearly</button>
-                                        <button>Monthly</button>
+                        <!-- Publication Trends Chart -->
+                        <div class="chart-section">
+                            <h3>📊 Publication Trends</h3>
+                            <div class="chart-container" id="trends-chart">
+                                <div class="chart-bar-container">
+                                    <div class="chart-bar" style="--height: 45%;" data-year="2020" data-count="12,450">
                                     </div>
+                                    <div class="chart-bar" style="--height: 65%;" data-year="2021" data-count="18,230">
+                                    </div>
+                                    <div class="chart-bar" style="--height: 78%;" data-year="2022" data-count="21,890">
+                                    </div>
+                                    <div class="chart-bar" style="--height: 85%;" data-year="2023" data-count="24,120">
+                                    </div>
+                                    <div class="chart-bar" style="--height: 92%;" data-year="2024" data-count="26,450">
+                                    </div>
+                                    <div class="chart-bar active" style="--height: 100%;" data-year="2025"
+                                        data-count="28,900"></div>
                                 </div>
-                                <div class="chart-wrapper">
-                                    <canvas id="trendsChart"></canvas>
-                                </div>
-                            </div>
-                            <div class="chart-card distribution">
-                                <div class="card-header">
-                                    <h3>📊 Research Field Distribution</h3>
-                                </div>
-                                <div class="chart-wrapper">
-                                    <canvas id="distributionChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Bottom Context Row -->
-                        <div class="analytics-row meta-grid">
-                            <div class="meta-card topics">
-                                <div class="card-header">
-                                    <h3>🔥 Hot Topics & Entities</h3>
-                                </div>
-                                <div class="topics-cloud" id="trends-topics-cloud">
-                                    <!-- Dynamic tags -->
-                                    <div class="empty-state">No search data available</div>
-                                </div>
-                            </div>
-                            <div class="meta-card journals">
-                                <div class="card-header">
-                                    <h3>🏛️ Leading Journals</h3>
-                                </div>
-                                <div class="journal-list" id="trends-journals-list">
-                                    <div class="empty-state">No journal data available</div>
+                                <div class="chart-labels">
+                                    <span>2020</span>
+                                    <span>2021</span>
+                                    <span>2022</span>
+                                    <span>2023</span>
+                                    <span>2024</span>
+                                    <span>2025</span>
                                 </div>
                             </div>
                         </div>
@@ -1009,31 +780,18 @@
                         <path d="M12 32C12 32 18 38 24 38C30 38 36 32 36 32" stroke="#34A853" stroke-width="2.5"
                             stroke-linecap="round" />
                     </svg>
-                    BioSense AI
+                    BioMed Scholar
                 </span>
             </div>
             <div class="footer-center">
                 <span>Powered by BioBERT • Elasticsearch • FastAPI</span>
             </div>
             <div class="footer-right">
-                <div class="footer-attribution"
-                    style="margin-right: 20px; font-weight: 500; font-size: 13px; color: var(--text-secondary);">
-                    Made with ❤️ by <span style="color: var(--primary-blue);">Sasidhara Kashyap Ch</span>
-                </div>
-                <a href="https://wa.me/918500419303" target="_blank" class="footer-feedback-btn"
-                    title="Give Feedback (WhatsApp)"
-                    style="display: flex; align-items: center; gap: 8px; padding: 6px 16px; background: #25d366; color: white; border-radius: 20px; text-decoration: none; font-size: 13px; font-weight: 600; margin-right: 20px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path
-                            d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7 8.38 8.38 0 0 1 3.8.9L21 3.5l-1 4.5z" />
-                    </svg>
-                    Feedback
-                </a>
                 <div class="status-indicator">
                     <span id="status-dot" class="status-dot"></span>
                     <span id="status-text">Checking...</span>
                 </div>
+                <span>Made with ❤️ by <strong>Sasidhara Kashyap Ch</strong></span>
             </div>
         </div>
     </footer>
@@ -1165,16 +923,8 @@
                         <span>Toggle reading list</span>
                     </div>
                     <div class="shortcut-item">
-                        <kbd>N</kbd>
-                        <span>Toggle notifications</span>
-                    </div>
-                    <div class="shortcut-item">
                         <kbd>D</kbd>
                         <span>Toggle dark mode</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <kbd>Z</kbd>
-                        <span>Toggle Zen mode</span>
                     </div>
                     <div class="shortcut-item">
                         <kbd>←</kbd> <kbd>→</kbd>
@@ -1368,7 +1118,47 @@
         </div>
     </div>
 
-
+    <!-- Advanced Search Modal -->
+    <div id="advanced-search-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔍 Advanced Search</h2>
+                <button class="modal-close" onclick="closeAdvancedSearch()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="filter-group">
+                    <label for="adv-author">Author(s)</label>
+                    <input type="text" id="adv-author" placeholder="e.g. Fauchi, Smith JS">
+                </div>
+                <div class="filter-group">
+                    <label for="adv-journal">Journal</label>
+                    <input type="text" id="adv-journal" placeholder="e.g. Nature, NEJM">
+                </div>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="adv-year-from">Date From</label>
+                        <input type="number" id="adv-year-from" placeholder="YYYY" min="1900" max="2099">
+                    </div>
+                    <div class="filter-group">
+                        <label for="adv-year-to">Date To</label>
+                        <input type="number" id="adv-year-to" placeholder="YYYY" min="1900" max="2099">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>Include in search</label>
+                    <div class="checkbox-row">
+                        <label><input type="checkbox" checked> Abstract</label>
+                        <label><input type="checkbox" checked> Full Text</label>
+                        <label><input type="checkbox" checked> MeSH Terms</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" onclick="closeAdvancedSearch()">Cancel</button>
+                <button class="modal-btn primary" onclick="applyAdvancedSearch()">Apply Filters</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Login Modal -->
     <div id="login-modal" class="modal">
@@ -1410,23 +1200,26 @@
     </div>
 
     <!-- Back to Top Button -->
+    <button id="back-to-top" class="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})"
+        title="Back to Top">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="18 15 12 9 6 15" />
+        </svg>
+    </button>
 
+    <!-- Scroll to Top -->
+    <button id="scroll-to-top" class="scroll-top-btn hidden" onclick="scrollToTop()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+    </button>
 
-    <script src="app.js?v=1.2.7-sq"></script>
+    <script src="app.v2.js"></script>
     <!-- Article Detail Modal -->
     <div id="article-detail-modal" class="article-modal-overlay">
         <div class="article-modal">
             <div class="article-modal-header">
                 <h2 class="article-modal-title" id="modal-article-title">Article Title</h2>
-                <button class="article-modal-share" onclick="shareArticleFromModal()" title="Share Article">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="18" cy="5" r="3" />
-                        <circle cx="6" cy="12" r="3" />
-                        <circle cx="18" cy="19" r="3" />
-                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                    </svg>
-                </button>
                 <button class="article-modal-close" onclick="closeArticleModal()">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18" />
@@ -1436,82 +1229,28 @@
             </div>
             <div class="article-modal-body">
                 <div class="modal-tabs">
-                    <button class="modal-tab active" onclick="switchModalTab('summary')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                            <polyline points="14 2 14 8 20 8" />
-                        </svg>
-                        Summary
-                    </button>
-                    <button class="modal-tab" onclick="switchModalTab('fulltext')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4l2 2h4a2 2 0 0 1 2 2z" />
-                        </svg>
-                        Full Text
-                    </button>
-                    <button class="modal-tab" onclick="switchModalTab('discussion')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path
-                                d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                        </svg>
-                        Discussion
-                    </button>
+                    <button class="modal-tab active" onclick="switchModalTab('summary')">Summary</button>
+                    <button class="modal-tab" onclick="switchModalTab('fulltext')">Full Text</button>
+                    <button class="modal-tab" onclick="switchModalTab('discussion')">Discussion</button>
                 </div>
 
                 <div id="modal-tab-summary" class="modal-tab-content active">
                     <div class="article-meta-grid">
                         <div class="meta-item">
-                            <div class="meta-label">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <line x1="2" y1="12" x2="22" y2="12" />
-                                    <path
-                                        d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                                </svg>
-                                <span>Source</span>
-                            </div>
-                            <span class="meta-value source-pill" id="modal-article-source">PubMed</span>
+                            <span class="meta-label">Source</span>
+                            <span class="meta-value" id="modal-article-source">PubMed</span>
                         </div>
                         <div class="meta-item">
-                            <div class="meta-label">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                                    <line x1="16" y1="2" x2="16" y2="6" />
-                                    <line x1="8" y1="2" x2="8" y2="6" />
-                                    <line x1="3" y1="10" x2="21" y2="10" />
-                                </svg>
-                                <span>Date</span>
-                            </div>
+                            <span class="meta-label">Date</span>
                             <span class="meta-value" id="modal-article-date">2024</span>
                         </div>
                         <div class="meta-item">
-                            <div class="meta-label">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                    <circle cx="9" cy="7" r="4" />
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                                </svg>
-                                <span>Authors</span>
-                            </div>
-                            <span class="meta-value" id="modal-article-authors">Authors...</span>
+                            <span class="meta-label">Type</span>
+                            <span class="meta-value" id="modal-article-type">Research Article</span>
                         </div>
                         <div class="meta-item">
-                            <div class="meta-label">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                                    <path d="M6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-                                </svg>
-                                <span>Journal</span>
-                            </div>
-                            <span class="meta-value" id="modal-article-journal">Journal...</span>
+                            <span class="meta-label">Authors</span>
+                            <span class="meta-value" id="modal-article-authors">Authors list...</span>
                         </div>
                     </div>
 

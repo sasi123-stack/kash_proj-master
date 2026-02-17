@@ -1,36 +1,28 @@
 
+from opensearchpy import OpenSearch, helpers
 import requests
 import json
 import time
 import xml.etree.ElementTree as ET
+from src.utils.logger import logger
 
 # --- CONFIGURATION ---
 ES_HOST = "assertive-mahogany-1m2hcasg.us-east-1.bonsaisearch.net"
 ES_USER = "0204784e62"
 ES_PASS = "38aa998d6c5c2891232c"
-ES_BASE_URL = f"https://{ES_HOST}:443"
+ES_URL = f"https://{ES_USER}:{ES_PASS}@{ES_HOST}:443"
 
 PUBMED_API_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 
-def make_es_request(method, path, data=None):
-    url = f"{ES_BASE_URL}/{path}"
-    headers = {"Content-Type": "application/json"}
-    auth = (ES_USER, ES_PASS)
-    
-    try:
-        if method == "PUT":
-            return requests.put(url, auth=auth, headers=headers, json=data)
-        elif method == "POST":
-            return requests.post(url, auth=auth, headers=headers, json=data)
-        elif method == "DELETE":
-            return requests.delete(url, auth=auth, headers=headers)
-        elif method == "HEAD":
-            return requests.head(url, auth=auth, headers=headers)
-        elif method == "GET":
-             return requests.get(url, auth=auth, headers=headers)
-    except Exception as e:
-        print(f"ES Request Error: {e}")
-    return None
+def get_opensearch_client():
+    """Create and return an OpenSearch client."""
+    return OpenSearch(
+        hosts=[ES_URL],
+        use_ssl=True,
+        verify_certs=True,
+        ssl_assert_hostname=False,
+        ssl_show_warn=False
+    )
 
 def fetch_pubmed_ids(query, max_results=20):
     """Search PubMed for IDs."""
@@ -39,7 +31,6 @@ def fetch_pubmed_ids(query, max_results=20):
         "term": query,
         "retmax": max_results,
         "retmode": "json",
-        "email": "student@university.edu"
     }
     try:
         resp = requests.get(f"{PUBMED_API_BASE}/esearch.fcgi", params=params)
@@ -58,11 +49,10 @@ def fetch_pubmed_details(pmids):
         "db": "pubmed",
         "id": ",".join(pmids),
         "retmode": "xml",
-        "email": "student@university.edu"
     }
     
     try:
-        resp = requests.post(f"{PUBMED_API_BASE}/efetch.fcgi", data=params) # POST allows more IDs
+        resp = requests.post(f"{PUBMED_API_BASE}/efetch.fcgi", data=params)
         return parse_pubmed_xml(resp.text)
     except Exception as e:
         print(f"PubMed Fetch Error: {e}")
@@ -92,7 +82,6 @@ def parse_pubmed_xml(xml_text):
             # Year
             pub_date = article.find(".//PubDate/Year")
             if pub_date is None:
-                 # Try MedlineDate
                  pub_date = article.find(".//PubDate/MedlineDate")
                  
             data["publication_year"] = pub_date.text[:4] if pub_date is not None and pub_date.text else "2024"
@@ -107,7 +96,7 @@ def parse_pubmed_xml(xml_text):
                     if initials is not None:
                         name += f" {initials.text}"
                     authors_list.append(name)
-            data["authors"] = ", ".join(authors_list[:5]) # Top 5 authors
+            data["authors"] = authors_list[:5] # Keep as list
             
             data["source"] = "pubmed"
             
@@ -118,13 +107,20 @@ def parse_pubmed_xml(xml_text):
     return articles
 
 def run_ingestion():
-    print("🚀 Starting FULL Native Ingestion Pipeline...")
+    print(f"🚀 Starting FULL OpenSearch Ingestion to {ES_HOST}...")
+    client = get_opensearch_client()
     
-    # 1. Setup Index (Text Only)
+    # Check connection
+    if not client.ping():
+        print("❌ Could not connect to OpenSearch. check credentials.")
+        return
+
+    print("✅ Connected to OpenSearch!")
+
     index_name = "pubmed_articles"
-    # Ensure index exists (we assume it was created by previous script, if not, create simplistic mapping)
-    resp = make_es_request("HEAD", index_name)
-    if resp.status_code != 200:
+    
+    # Create index if not exists
+    if not client.indices.exists(index=index_name):
         print(f"Creating index '{index_name}'...")
         mapping = {
             "mappings": {
@@ -139,70 +135,48 @@ def run_ingestion():
                 }
             }
         }
-        make_es_request("PUT", index_name, mapping)
+        client.indices.create(index=index_name, body=mapping)
 
-    # 2. Define Queries (Expanded)
     queries = [
-        # Major Diseases
         "cancer immunotherapy",
         "type 2 diabetes treatment",
         "alzheimers disease",
         "cardiovascular disease prevention",
-        "parkinsons disease neuroprotection",
-        "obesity metabolic syndrome",
-        "chronic kidney disease management",
-        "asthma severe treatment",
-        "rheumatoid arthritis biologics",
-        
-        # Innovative Technologies
         "CRISPR gene editing",
         "mRNA vaccine technology",
-        "artificial intelligence in radiology",
-        "machine learning drug discovery",
-        "CAR-T cell therapy",
-        "nanomedicine drug delivery",
-        
-        # Public Health & Mental Health
-        "covid-19 long term effects",
-        "depression cognitive behavioral therapy",
-        "anxiety disorders treatment",
-        "schizophrenia novel antipsychotics",
-        "climate change infectious diseases",
-        "antibiotic resistance mechanisms",
-        "gut microbiome mental health",
-        "social determinants of health"
+        "artificial intelligence in medicine",
+        "gut microbiome health"
     ]
 
     total_indexed = 0
     
     for q in queries:
         print(f"\nProcessing: '{q}'")
-        
-        # A. Search
-        pmids = fetch_pubmed_ids(q, max_results=200)
+        pmids = fetch_pubmed_ids(q, max_results=50)
         print(f"  Found {len(pmids)} IDs")
         
-        # B. Fetch Details
         articles = fetch_pubmed_details(pmids)
         print(f"  Parsed {len(articles)} articles")
         
-        # C. Index
-        count = 0
+        actions = []
         for doc in articles:
-            # Metadata Wrapper
-            doc["metadata"] = doc.copy()
-            
-            # Index
-            resp = make_es_request("PUT", f"{index_name}/_doc/{doc['id']}", doc)
-            if resp and resp.status_code in [200, 201]:
-                count += 1
-                print(".", end="", flush=True)
-            else:
-                print("x", end="", flush=True)
-                
-        total_indexed += count
-        print(f" -> {count} indexed")
-        time.sleep(1) # Be nice to PubMed API
+            doc["metadata"] = {
+                "authors": doc["authors"],
+                "publication_date": doc["publication_year"],
+                "source": "pubmed"
+            }
+            actions.append({
+                "_index": index_name,
+                "_id": doc["id"],
+                "_source": doc
+            })
+        
+        if actions:
+            success, failed = helpers.bulk(client, actions)
+            total_indexed += success
+            print(f"  Successfully indexed {success} documents.")
+        
+        time.sleep(1)
 
     print(f"\n\n🎉 Done! Total indexed: {total_indexed}")
 

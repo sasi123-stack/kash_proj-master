@@ -1,5 +1,5 @@
 ---
-title: BioMed Scholar API
+title: BioSense AI API
 emoji: 🔬
 colorFrom: indigo
 colorTo: blue
@@ -7,11 +7,11 @@ sdk: docker
 app_port: 7860
 ---
 
-# 🔬 BioMed Scholar - Biomedical Search Engine
+# 🔬 BioSense AI - Biomedical Search Engine
 
 An intelligent, Google Scholar-style semantic search engine for biomedical literature and clinical trials powered by BioBERT and AI.
 
-![BioMed Scholar](https://img.shields.io/badge/BioMed-Scholar-blue?style=for-the-badge)
+![BioSense AI](https://img.shields.io/badge/BioSense-AI-blue?style=for-the-badge)
 ![Python](https://img.shields.io/badge/Python-3.9+-green?style=flat-square)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=flat-square)
 ![Elasticsearch](https://img.shields.io/badge/Elasticsearch-8.11-yellow?style=flat-square)
@@ -44,7 +44,7 @@ An intelligent, Google Scholar-style semantic search engine for biomedical liter
 | **Save/Bookmark** | Save articles to your reading list |
 | **Export Results** | Download as CSV or BibTeX |
 | **Citation Generator** | One-click citations in APA, MLA, Chicago, BibTeX |
-| **Share Search** | Copy shareable link for your search |
+| **Share Article** | One-click sharing via Web Share API or clipboard |
 | **Pagination** | Navigate through results with keyboard arrows |
 | **View Modes** | List view or compact view |
 
@@ -280,7 +280,7 @@ curl http://localhost:8000/api/v1/statistics
 
 ## 🌙 Theme Support
 
-BioMed Scholar supports both **Light** and **Dark** themes:
+BioSense AI supports both **Light** and **Dark** themes:
 - Toggle with the sun/moon icon in the header
 - Or press `D` key
 - Preference is saved automatically

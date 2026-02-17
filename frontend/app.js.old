@@ -1,6 +1,4 @@
-// BioSense AI v1.2.8 - Dynamic Queries & Modals Fix
-// Force version update
-
+// BioMed Scholar v1.1.1 - Author Fix Applied
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
 /**
@@ -34,14 +32,12 @@ const isFirebase = window.location.hostname.includes('web.app') || window.locati
 const isVercel = window.location.hostname.includes('vercel.app');
 
 // Backend URLs for different environments
-const HF_BACKEND_URL = 'https://sasidhara123-biomed-scholar-api.hf.space/api/v1';
+const NGROK_BACKEND_URL = 'https://nonreliably-unaxised-kit.ngrok-free.dev/api/v1';
+const RENDER_BACKEND_URL = 'https://sasidhara123-biomed-scholar-api.hf.space/api/v1'; // Live Hugging Face Space
 
 // API URL configuration
-const API_BASE_URL = (isLocal && !window.location.search.includes('remote=true')) ?
-    'http://localhost:8000/api/v1' : HF_BACKEND_URL;
-
-console.log('App initialized. Env:', isLocal ? 'Local' : 'Remote');
-console.log('API Base URL:', API_BASE_URL);
+const API_BASE_URL = (isLocal) ? 'http://localhost:8000/api/v1' :
+    RENDER_BACKEND_URL;
 
 // Firebase Configuration
 // REPLACE THESE VALUES WITH YOUR FIREBASE PROJECT CONFIGURATION
@@ -109,18 +105,6 @@ const suggestions = [
     'drug interactions'
 ];
 
-// Randomizable Suggested Queries for Welcome State
-const SUGGESTED_QUERIES = [
-    { title: 'Vaccine Heart Health', icon: '🫀', tag: 'Cardiology', desc: 'Investigate cardiac safety profiles and long-term studies of mRNA technologies.', query: 'Long-term effects of mRNA vaccines on heart health' },
-    { title: 'Sickle Cell CRISPR', icon: '🧬', tag: 'Genetics', desc: 'Explore cutting-edge gene therapy clinical trials and regulatory pathways for blood disorders.', query: 'CRISPR gene editing in sickle cell anemia treatments' },
-    { title: 'Gut-Brain Axis', icon: '🧠', tag: 'Neurology', desc: 'Analyze how intestinal microbial diversity influences neuroinflammation and cognitive decline.', query: 'Gut microbiome role in Alzheimers disease progression' },
-    { title: 'AI in Oncology', icon: '🤖', tag: 'Oncology', desc: 'Review the efficacy of machine learning models in detecting occult metastases from imaging data.', query: 'Artificial Intelligence applications in metastatic breast cancer screening' },
-    { title: 'Precision Oncology', icon: '🎯', tag: 'Oncology', desc: 'Targeting specific genetic mutations in advanced Stage IV lung cancer therapies.', query: 'Precision medicine and genetic targeting in Stage IV lung cancer' },
-    { title: 'T-Cell Therapy', icon: '🛡️', tag: 'Immunology', desc: 'Evolution of CAR T-cell therapy in treating resistant B-cell lymphomas and leukemia.', query: 'CAR T-cell therapy efficacy in resistant B-cell lymphoma' },
-    { title: 'Microplastic Impact', icon: '🌊', tag: 'Environmental', desc: 'Biological consequences of microplastic accumulation in human vascular tissues.', query: 'Impact of microplastics on human cardiovascular system' },
-    { title: 'Sleep & Heart', icon: '💤', tag: 'Cardiology', desc: 'The role of circadian rhythms in regulating blood pressure and stroke risk factors.', query: 'Circadian rhythm disruption and hypertension risk' }
-];
-
 // Related search mappings
 const relatedSearches = {
     'covid': ['COVID-19 symptoms', 'COVID-19 treatment', 'COVID-19 long term effects', 'mRNA vaccines'],
@@ -132,16 +116,14 @@ const relatedSearches = {
 
 // DOM Elements
 const headerSearchInput = document.getElementById('header-search-input');
-const clearSearchBtn = document.getElementById('clear-search-btn');
 const headerSearchBtn = document.getElementById('header-search-btn');
 const searchResults = document.getElementById('search-results');
 const resultsCount = document.getElementById('results-count');
 const statusDot = document.getElementById('status-dot');
 const statusText = document.getElementById('status-text');
-// Stat elements (using classes for multiple instances)
-const pubmedCountVals = document.querySelectorAll('.pubmed-count-val');
-const trialsCountVals = document.querySelectorAll('.trials-count-val');
-const totalDocsCountVals = document.querySelectorAll('.total-docs-count-val');
+const pubmedCount = document.getElementById('pubmed-count');
+const trialsCount = document.getElementById('trials-count');
+const totalDocsCount = document.getElementById('total-docs-count');
 const autocompleteDropdown = document.getElementById('autocomplete-dropdown');
 const historyItems = document.getElementById('history-items');
 const suggestionItems = document.getElementById('suggestion-items');
@@ -175,31 +157,22 @@ const totalPagesSpan = document.getElementById('total-pages');
 // INITIALIZATION
 // ==========================================
 async function init() {
-    console.log('BioSense AI: Initializing Application...');
+    // Start in full width mode (hide sidebar)
+    const mainContainer = document.querySelector('.main-container');
+    if (mainContainer) mainContainer.classList.add('full-width');
 
-    // Initialize layout based on default tab
-    switchTab('articles');
-
-    try {
-        initTheme();
-        initEventListeners();
-        initKeyboardShortcuts();
-        initDynamicScroll();
-        initScrollReveal();
-        updateReadingListCount();
-        updateLoginUI();
-        updateNotificationUI();
-        renderSuggestedQueries();
-
-        // Non-blocking health checks and stats
-        checkHealth().catch(err => console.warn('Early health check failed:', err));
-        loadStatistics().catch(err => console.warn('Early stats load failed:', err));
-
-        console.log('BioSense AI: Initialization Complete.');
-    } catch (error) {
-        console.error('BioSense AI: Critical initialization error:', error);
-        showToast('Application initialization issue. Some features may be limited.', 'error');
-    }
+    initTheme();
+    initEventListeners();
+    initKeyboardShortcuts();
+    initDynamicScroll();
+    initScrollReveal();
+    updateReadingListCount();
+    updateLoginUI();
+    renderRecentChips();
+    await checkHealth();
+    await loadStatistics();
+    await checkHealth(); // Double check? (kept from original)
+    // await loadStatistics(); // Removed duplicate call
 }
 
 function createModal() {
@@ -251,56 +224,37 @@ function openArticleModal(resultId) {
     // Metadata...
     const metaHtml = `
         <div class="meta-item">
-            <div class="meta-label">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="2" y1="12" x2="22" y2="12" />
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                </svg>
-                <span>Source</span>
-            </div>
-            <span class="meta-value source-pill">${result.source === 'pubmed' ? 'PubMed' : 'Clinical Trial'}</span>
+            <span class="meta-label">Source</span>
+            <span class="meta-value">${result.source === 'pubmed' ? 'PubMed' : 'Clinical Trial'}</span>
         </div>
         <div class="meta-item">
-            <div class="meta-label">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-                <span>Date</span>
-            </div>
-            <span class="meta-value">${result.metadata?.publication_date || 'N/A'}</span>
+             <span class="meta-label">Date</span>
+             <span class="meta-value">${result.metadata?.publication_date || 'N/A'}</span>
         </div>
         <div class="meta-item">
-            <div class="meta-label">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-                <span>Authors</span>
-            </div>
-            <span class="meta-value">${authors.length > 0 ? authors.join(', ') : (result.source === 'pubmed' ? 'Multiple Authors' : 'Scientific Group')}</span>
+             <span class="meta-label">Authors</span>
+             <span class="meta-value">${authors.length > 0 ? authors.slice(0, 3).join(', ') : (result.source === 'pubmed' ? 'Multiple Authors' : 'Scientific Group')}</span>
         </div>
         <div class="meta-item">
-            <div class="meta-label">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                    <path d="M6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-                </svg>
-                <span>Journal</span>
-            </div>
-            <span class="meta-value">${result.metadata?.journal || 'N/A'}</span>
+             <span class="meta-label">Journal</span>
+             <span class="meta-value">${result.metadata?.journal || 'N/A'}</span>
         </div>
     `;
 
     const metaGrid = modal.querySelector('.article-meta-grid');
     if (metaGrid) metaGrid.innerHTML = metaHtml;
 
+    // Update external link
+    const viewSourceBtn = document.getElementById('modal-view-source');
     const externalUrl = getExternalUrl(result);
+    if (viewSourceBtn) {
+        if (externalUrl) {
+            viewSourceBtn.href = externalUrl;
+            viewSourceBtn.style.display = 'flex';
+        } else {
+            viewSourceBtn.style.display = 'none';
+        }
+    }
 
     // Show modal
     const overlay = document.querySelector('.article-modal-overlay');
@@ -337,7 +291,23 @@ function closeArticleModal() {
     document.body.style.overflow = '';
 }
 
-
+function shareArticleFromModal() {
+    // Simple share implementation
+    const title = document.getElementById('modal-article-title').textContent;
+    const text = `Check out this article: "${title}"`;
+    if (navigator.share) {
+        navigator.share({
+            title: title,
+            text: text,
+            url: window.location.href
+        }).catch(console.error);
+    } else {
+        const url = window.location.href;
+        navigator.clipboard.writeText(`${text} ${url}`).then(() => {
+            showToast('Article info copied to clipboard', 'success');
+        });
+    }
+}
 
 function closeAllModals() {
     closeArticleModal();
@@ -382,7 +352,7 @@ function initScrollReveal() {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                entry.target.classList.add('revealed');
+                entry.target.classList.add('reveal-active');
                 observer.unobserve(entry.target);
             }
         });
@@ -402,10 +372,7 @@ function initEventListeners() {
     });
 
     // Autocomplete
-    headerSearchInput?.addEventListener('input', () => {
-        handleSearchInput();
-        toggleClearButton();
-    });
+    headerSearchInput?.addEventListener('input', handleSearchInput);
     headerSearchInput?.addEventListener('focus', showAutocomplete);
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.header-search')) {
@@ -564,37 +531,12 @@ function initEventListeners() {
             updateCitationText();
         });
     });
-
-    // Online/Offline Status Listeners
-    window.addEventListener('online', () => {
-        console.log('Network status: ONLINE');
-        const sDot = document.getElementById('status-dot');
-        const sText = document.getElementById('status-text');
-        if (sDot) {
-            sDot.classList.remove('offline');
-            sDot.classList.add('online');
-        }
-        if (sText) sText.textContent = 'Online';
-        checkHealth(); // Trigger immediate check
-    });
-
-    window.addEventListener('offline', () => {
-        console.log('Network status: OFFLINE');
-        const sDot = document.getElementById('status-dot');
-        const sText = document.getElementById('status-text');
-        if (sDot) {
-            sDot.classList.remove('online');
-            sDot.classList.add('offline');
-        }
-        if (sText) sText.textContent = 'Offline';
-    });
 }
 
 function initKeyboardShortcuts() {
-    console.log('BioSense AI: Keyboard shortcuts enabled.');
     document.addEventListener('keydown', (e) => {
         // Ignore if typing in input
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
             if (e.key === 'Escape') {
                 e.target.blur();
                 hideAutocomplete();
@@ -602,56 +544,44 @@ function initKeyboardShortcuts() {
             return;
         }
 
-        const isMod = e.ctrlKey || e.metaKey;
-
         // Ctrl+K - Focus search
-        if (isMod && e.key === 'k') {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
             e.preventDefault();
             headerSearchInput?.focus();
         }
 
         // Ctrl+Shift+F - Advanced search
-        if (isMod && e.shiftKey && e.key === 'F') {
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
             e.preventDefault();
             openAdvancedSearch();
         }
 
-        // ? or H - Show/Help
-        if (e.key === '?' || (e.key.toLowerCase() === 'h' && !isMod)) {
+        // ? - Show shortcuts
+        if (e.key === '?') {
             showKeyboardShortcuts();
         }
 
         // 1, 2, 3 - Switch tabs
-        if (e.key === '1' && !isMod) switchTab('articles');
-        if (e.key === '2' && !isMod) switchTab('qa');
-        if (e.key === '3' && !isMod) switchTab('trends');
+        if (e.key === '1') switchTab('articles');
+        if (e.key === '2') switchTab('qa');
+        if (e.key === '3') switchTab('trends');
 
         // B - Toggle reading list
-        if ((e.key.toLowerCase() === 'b') && !isMod) {
+        if (e.key === 'b' || e.key === 'B') {
             toggleReadingList();
         }
 
-        // N - Toggle Notifications
-        if ((e.key.toLowerCase() === 'n') && !isMod) {
-            toggleNotifications();
-        }
-
         // D - Toggle dark mode
-        if ((e.key.toLowerCase() === 'd') && !isMod) {
+        if (e.key === 'd' || e.key === 'D') {
             toggleTheme();
         }
 
-        // Z - Toggle Zen mode
-        if ((e.key.toLowerCase() === 'z') && !isMod) {
-            toggleZenMode();
-        }
-
         // Arrow keys for pagination
-        if (e.key === 'ArrowLeft' && currentPage > 1 && !isMod) {
+        if (e.key === 'ArrowLeft' && currentPage > 1) {
             currentPage--;
             displayCurrentResults();
         }
-        if (e.key === 'ArrowRight' && !isMod) {
+        if (e.key === 'ArrowRight') {
             const totalPages = Math.ceil(currentResults.length / resultsPerPage);
             if (currentPage < totalPages) {
                 currentPage++;
@@ -659,18 +589,9 @@ function initKeyboardShortcuts() {
             }
         }
 
-        // Escape - Close modals and dropdowns
+        // Escape - Close modals
         if (e.key === 'Escape') {
-            const modals = document.querySelectorAll('.modal.open, .article-modal-overlay.open');
-            if (modals.length > 0) {
-                modals.forEach(m => m.classList.remove('open'));
-            } else {
-                document.getElementById('notification-dropdown')?.classList.add('hidden');
-                document.getElementById('autocomplete-dropdown')?.classList.add('hidden');
-                closeArticleModal();
-                closeShortcutsModal();
-                closeAdvancedSearch();
-            }
+            closeAllModals();
         }
     });
 }
@@ -693,10 +614,9 @@ function updateLoginUI() {
         const userMenu = document.createElement('div');
         userMenu.id = 'user-menu-btn';
         userMenu.className = 'header-icon-btn';
-        const displayName = currentUser.name || currentUser.displayName || 'U';
         userMenu.innerHTML = `
             <div class="user-avatar" style="width: 32px; height: 32px; background: var(--primary-blue); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer;">
-                ${displayName.charAt(0)}
+                ${currentUser.name.charAt(0)}
             </div>
         `;
         userMenu.onclick = toggleUserProfile;
@@ -706,7 +626,11 @@ function updateLoginUI() {
     }
 }
 
-// function openLoginModal moved to auth section
+function openLoginModal() {
+    // For this demo, we just instant "mock" login
+    // in a real app, show a modal form
+    mockLogin();
+}
 
 function toggleMobileFilters() {
     const sidebar = document.querySelector('.filters-sidebar');
@@ -716,27 +640,23 @@ function toggleMobileFilters() {
     document.body.style.overflow = sidebar.classList.contains('show-mobile') ? 'hidden' : '';
 }
 
-/**
- * Handles Google Sign-In using Firebase Auth
- */
-/**
- * Handles Google Sign-In using Firebase Auth
- */
 function mockLogin() {
-    handleGoogleLogin();
+    currentUser = {
+        name: 'Dr. Researcher',
+        email: 'researcher@biomed.edu',
+        role: 'Verified Researcher'
+    };
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    updateLoginUI();
+    showToast('Welcome back, Dr. Researcher!', 'success');
 }
 
-
-/**
- * Handles Logout
- */
-/**
- * Handles Logout
- */
 function mockLogout() {
-    handleLogout();
+    currentUser = null;
+    localStorage.setItem('currentUser', 'null');
+    updateLoginUI();
+    showToast('Logged out successfully', 'info');
 }
-
 
 function toggleUserProfile() {
     // Create/Show a simple profile dropdown or modal
@@ -759,16 +679,13 @@ function toggleUserProfile() {
         border-radius: var(--radius-lg);
         box-shadow: var(--shadow-xl);\n        width: 280px;\n        padding: 20px;\n        z-index: 2000;\n    `;
 
-    const displayName = currentUser.name || currentUser.displayName || 'User';
-    const displayRole = currentUser.role || 'Researcher';
-
     profile.innerHTML = `
         <div style="text-align: center; margin-bottom: 16px;">
             <div style="width: 60px; height: 60px; background: var(--primary-blue); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin: 0 auto 10px;">
-                ${displayName.charAt(0)}
+                ${currentUser.name.charAt(0)}
             </div>
-            <h3 style="margin: 0; font-size: 16px;">${displayName}</h3>
-            <span style="font-size: 12px; color: var(--text-muted);">${displayRole}</span>
+            <h3 style="margin: 0; font-size: 16px;">${currentUser.name}</h3>
+            <span style="font-size: 12px; color: var(--text-muted);">${currentUser.role}</span>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; text-align: center;">
             <div style="background: var(--bg-tertiary); padding: 8px; border-radius: var(--radius-md);">
@@ -801,15 +718,6 @@ function toggleUserProfile() {
 function handleSearchInput() {
     const query = headerSearchInput.value.trim().toLowerCase();
 
-    // Show/hide clear button
-    if (clearSearchBtn) {
-        if (query.length > 0) {
-            clearSearchBtn.classList.remove('hidden');
-        } else {
-            clearSearchBtn.classList.add('hidden');
-        }
-    }
-
     if (query.length === 0) {
         showAutocomplete();
         return;
@@ -834,21 +742,19 @@ function handleSearchInput() {
 }
 
 function showAutocomplete() {
-    const query = headerSearchInput.value.trim();
-
     // Update history items with Timeline look
     if (searchHistory.length === 0) {
         historyItems.innerHTML = '';
     } else {
         historyItems.innerHTML = searchHistory.slice(0, 5).map(h => {
-            const hQuery = typeof h === 'string' ? h : h.query;
+            const query = typeof h === 'string' ? h : h.query;
             const timeStr = typeof h === 'object' && h.timestamp ? new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
             return `
-                <div class="autocomplete-item timeline-item" onclick="selectSuggestion(this.querySelector('.history-query-text').textContent)">
+                <div class="autocomplete-item timeline-item" onclick="selectSuggestion('${escapeHtml(query)}')">
                     <div class="timeline-marker"></div>
                     <div class="timeline-content">
-                        <span class="history-query-text">${escapeHtml(hQuery)}</span>
+                        <span>${escapeHtml(query)}</span>
                         ${timeStr ? `<span class="timeline-time">${timeStr}</span>` : ''}
                     </div>
                 </div>
@@ -858,24 +764,8 @@ function showAutocomplete() {
 
     // Show/hide sections
     const historySection = document.getElementById('search-history-section');
-    const suggestionsSection = document.getElementById('suggestions-section');
-
     if (historySection) {
-        // Show history if it exists and EITHER there's no query OR there's a match? 
-        // Standard UX: show history when focused and empty.
-        historySection.style.display = (searchHistory.length > 0 && !query) ? 'block' : 'none';
-    }
-
-    if (suggestionsSection) {
-        // Show suggestions only if there's a query
-        suggestionsSection.style.display = query ? 'block' : 'none';
-    }
-
-    // Hide entire dropdown if both sections are empty
-    if ((!searchHistory.length || query) && !query) {
-        // No history and no query -> hide
-        hideAutocomplete();
-        return;
+        historySection.style.display = searchHistory.length > 0 ? 'block' : 'none';
     }
 
     autocompleteDropdown?.classList.remove('hidden');
@@ -891,17 +781,47 @@ function selectSuggestion(query) {
     performSearch();
 }
 
-function clearSearchHistory(event) {
-    if (event) event.stopPropagation();
+function clearSearchHistory(e) {
+    e.stopPropagation();
     searchHistory = [];
-    localStorage.setItem('searchHistory', JSON.stringify([]));
-    showAutocomplete();
-    showToast('Search history cleared', 'info');
+    localStorage.setItem('searchHistory', '[]');
+    historyItems.innerHTML = '';
+    showToast('Search history cleared', 'success');
 }
 
-// Recent searches removed
+function addToSearchHistory(query) {
+    // Structure: { query: string, timestamp: number }
+    // Remove if exists (to move to top)
+    searchHistory = searchHistory.filter(h => (typeof h === 'string' ? h : h.query).toLowerCase() !== query.toLowerCase());
 
-// function renderRecentChips removed
+    // Add to front with timestamp
+    searchHistory.unshift({
+        query: query,
+        timestamp: Date.now()
+    });
+
+    // Keep only last 20
+    searchHistory = searchHistory.slice(0, 20);
+    localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+    renderRecentChips();
+}
+
+function renderRecentChips() {
+    const bar = document.getElementById('recent-searches-bar');
+    const container = document.getElementById('recent-chips');
+    if (!bar || !container) return;
+
+    if (searchHistory.length === 0) {
+        bar.classList.add('hidden');
+        return;
+    }
+
+    bar.classList.remove('hidden');
+    container.innerHTML = searchHistory.slice(0, 5).map(h => {
+        const q = typeof h === 'string' ? h : h.query;
+        return `<button class="recent-chip" onclick="setExampleQuery('${escapeHtml(q)}')">${escapeHtml(q)}</button>`;
+    }).join('');
+}
 
 function highlightMatch(text, query) {
     if (!query) return escapeHtml(text);
@@ -928,15 +848,15 @@ function switchTab(tabName) {
     const mainContainer = document.querySelector('.main-container');
     const scholarMain = document.querySelector('.scholar-main');
 
+    // Reset layout classes
+    mainContainer?.classList.remove('full-width', 'articles-layout');
     scholarMain?.classList.remove('no-padding');
-    document.body.classList.remove('chat-mode');
 
-    if (tabName === 'qa' || tabName === 'trends') {
+    if (tabName === 'qa') {
         mainContainer?.classList.add('full-width');
         scholarMain?.classList.add('no-padding');
-        if (tabName === 'qa') document.body.classList.add('chat-mode');
-    } else {
-        mainContainer?.classList.remove('full-width');
+    } else if (tabName === 'articles') {
+        mainContainer?.classList.add('articles-layout');
     }
 
     // If switching to Trends, update dashboard
@@ -946,185 +866,90 @@ function switchTab(tabName) {
 }
 
 let trendsChart = null;
-let distributionChart = null;
 
 function updateTrendsDashboard() {
-    const ctxTrend = document.getElementById('trendsChart');
-    const ctxDist = document.getElementById('distributionChart');
-    if (!ctxTrend) return;
+    const ctx = document.getElementById('trendsChart');
+    if (!ctx) return;
 
-    // Reset charts if they exist
-    if (trendsChart) trendsChart.destroy();
-    if (distributionChart) distributionChart.destroy();
+    if (trendsChart) {
+        trendsChart.destroy();
+    }
 
-    const results = currentResults || [];
     const isDark = document.body.classList.contains('dark-theme');
     const textColor = isDark ? '#e8eaed' : '#3c4043';
     const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
 
-    // Update Processed Count Card
-    const processedCount = document.getElementById('trends-processed-count');
-    if (processedCount) processedCount.textContent = results.length;
+    // Mock trend data for demonstration
+    const labels = ['2018', '2019', '2020', '2021', '2022', '2023', '2024'];
+    const pubmedData = [120, 150, 280, 240, 210, 260, 310];
+    const trialsData = [40, 50, 90, 80, 75, 85, 95];
 
-    if (results.length === 0) {
-        // Handle empty state for charts
-        const emptyState = '<div class="empty-state">Perform a search to see real-time insights</div>';
-        document.getElementById('trends-topics-cloud').innerHTML = emptyState;
-        document.getElementById('trends-journals-list').innerHTML = emptyState;
-        return;
-    }
-
-    // 1. DATA AGGREGATION
-    const yearCounts = {};
-    const journalCounts = {};
-    const typeCounts = { 'Research': 0, 'Review': 0, 'Clinical Trial': 0, 'Other': 0 };
-    const keywords = {};
-
-    let totalAge = 0;
-    const currentYear = new Date().getFullYear();
-
-    results.forEach(r => {
-        // Years
-        const dateStr = r.metadata?.publication_date || '';
-        const yearMatch = dateStr.match(/\d{4}/);
-        if (yearMatch) {
-            const year = yearMatch[0];
-            yearCounts[year] = (yearCounts[year] || 0) + 1;
-            totalAge += (currentYear - parseInt(year));
-        }
-
-        // Journals
-        const journal = r.metadata?.journal || (r.source === 'pubmed' ? 'Unknown Journal' : 'ClinicalTrials.gov');
-        journalCounts[journal] = (journalCounts[journal] || 0) + 1;
-
-        // Types
-        const type = (r.metadata?.article_type || '').toLowerCase();
-        if (type.includes('review')) typeCounts['Review']++;
-        else if (type.includes('clinical') || r.source === 'clinical_trials') typeCounts['Clinical Trial']++;
-        else if (type.includes('research') || type.includes('article')) typeCounts['Research']++;
-        else typeCounts['Other']++;
-
-        // Keywords from Title (top words > 4 chars)
-        const words = (r.title || '').toLowerCase().split(/\W+/);
-        words.forEach(w => {
-            if (w.length > 5 && !['between', 'results', 'clinical', 'studies', 'study', 'research'].includes(w)) {
-                keywords[w] = (keywords[w] || 0) + 1;
-            }
-        });
-    });
-
-    // Update Avg Age metric
-    const avgAgeValue = document.querySelector('.metric-card:nth-child(3) .metric-value');
-    if (avgAgeValue) {
-        const avg = results.length > 0 ? (totalAge / results.length).toFixed(1) : '0.0';
-        avgAgeValue.textContent = `${avg} Yrs`;
-    }
-
-    // Update Clinical Trials count metric
-    const trialsValue = document.querySelector('.metric-card:nth-child(4) .metric-value');
-    if (trialsValue) {
-        trialsValue.textContent = typeCounts['Clinical Trial'];
-    }
-
-    // 2. MAIN TREND CHART (Line)
-    const sortedYears = Object.keys(yearCounts).sort();
-    const trendLabels = sortedYears.slice(-8); // Last 8 years found
-    const trendData = trendLabels.map(y => yearCounts[y]);
-
-    trendsChart = new Chart(ctxTrend, {
+    trendsChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: trendLabels,
-            datasets: [{
-                label: 'Publications',
-                data: trendData,
-                borderColor: '#1a73e8',
-                backgroundColor: 'rgba(26, 115, 232, 0.1)',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 4
-            }]
+            labels: labels,
+            datasets: [
+                {
+                    label: 'PubMed Articles',
+                    data: pubmedData,
+                    borderColor: '#1a73e8',
+                    backgroundColor: 'rgba(26, 115, 232, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                },
+                {
+                    label: 'Clinical Trials',
+                    data: trialsData,
+                    borderColor: '#34a853',
+                    backgroundColor: 'rgba(52, 168, 83, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false },
-                tooltip: { mode: 'index', intersect: false }
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: textColor,
+                        font: { family: 'Inter', size: 12, weight: '500' }
+                    }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: isDark ? '#202124' : '#ffffff',
+                    titleColor: textColor,
+                    bodyColor: textColor,
+                    borderColor: 'rgba(0,0,0,0.1)',
+                    borderWidth: 1
+                }
             },
             scales: {
-                x: { grid: { display: false }, ticks: { color: textColor } },
-                y: { grid: { color: gridColor }, ticks: { color: textColor, stepSize: 1, beginAtZero: true } }
+                x: {
+                    grid: { display: false },
+                    ticks: { color: textColor }
+                },
+                y: {
+                    grid: { color: gridColor },
+                    ticks: { color: textColor },
+                    beginAtZero: true
+                }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
             }
         }
     });
-
-    // 3. DISTRIBUTION CHART (Doughnut)
-    if (ctxDist) {
-        distributionChart = new Chart(ctxDist, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(typeCounts),
-                datasets: [{
-                    data: Object.values(typeCounts),
-                    backgroundColor: ['#1a73e8', '#34a853', '#fabc05', '#ea4335'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '70%',
-                plugins: {
-                    legend: { position: 'bottom', labels: { color: textColor, padding: 15, font: { size: 11 } } }
-                }
-            }
-        });
-    }
-
-    // 4. TOPICS CLOUD
-    const topTopics = Object.entries(keywords)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
-        .map(entry => entry[0]);
-
-    const topicsCloud = document.getElementById('trends-topics-cloud');
-    if (topicsCloud) {
-        topicsCloud.innerHTML = topTopics.map(t => `<div class="topic-tag">${t}</div>`).join('');
-    }
-
-    // 5. JOURNALS LIST
-    const topJournals = Object.entries(journalCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5);
-
-    const journalsList = document.getElementById('trends-journals-list');
-    if (journalsList) {
-        journalsList.innerHTML = topJournals.map(j => `
-            <div class="journal-item">
-                <span class="journal-name" title="${j[0]}">${truncate(j[0], 30)}</span>
-                <span class="journal-count">${j[1]}</span>
-            </div>
-        `).join('');
-    }
-}
-
-function setViewMode(mode) {
-    currentView = mode;
-
-    // Update buttons
-    const listBtn = document.getElementById('view-list-btn');
-    const compactBtn = document.getElementById('view-compact-btn');
-
-    if (mode === 'list') {
-        listBtn?.classList.add('active');
-        compactBtn?.classList.remove('active');
-    } else {
-        listBtn?.classList.remove('active');
-        compactBtn?.classList.add('active');
-    }
-
-    applyViewMode();
 }
 
 function applyViewMode() {
@@ -1135,202 +960,6 @@ function applyViewMode() {
         } else {
             resultsList.classList.remove('compact');
         }
-    }
-
-    // Manage toolbar visibility - only show if there are results
-    const toolbar = document.getElementById('results-toolbar');
-    if (toolbar) {
-        if (currentResults && currentResults.length > 0) {
-            toolbar.classList.remove('hidden');
-        } else {
-            toolbar.classList.add('hidden');
-        }
-    }
-}
-
-/**
- * Filters the currently displayed results on the clientside
- */
-function filterResultsList() {
-    const filterText = document.getElementById('results-filter-input').value.toLowerCase().trim();
-    const cards = document.querySelectorAll('.result-card');
-
-    cards.forEach(card => {
-        const title = card.querySelector('.result-title').textContent.toLowerCase();
-        const snippet = card.querySelector('.result-snippet')?.textContent.toLowerCase() || '';
-        const authors = card.querySelector('.meta-authors')?.textContent.toLowerCase() || '';
-
-        if (title.includes(filterText) || snippet.includes(filterText) || authors.includes(filterText)) {
-            card.style.display = '';
-        } else {
-            card.style.display = 'none';
-        }
-    });
-
-    // Update count display to show (filtered)
-    const visibleCount = Array.from(cards).filter(c => c.style.display !== 'none').length;
-    if (resultsCount && filterText) {
-        resultsCount.innerHTML += ` <span style="font-weight: normal; color: var(--text-muted);">(${visibleCount} match filter)</span>`;
-    }
-}
-
-/**
- * Toggles all abstracts open/closed (conceptually: in detailed view)
- */
-let allAbstractsExpanded = false;
-function toggleAllAbstracts() {
-    allAbstractsExpanded = !allAbstractsExpanded;
-    const btn = document.getElementById('expand-all-btn');
-
-    // This is more of a "View Mode" helper if we had collapsible cards
-    // For now, since abstracts are always there in 'list' mode, let's make it
-    // toggle a 'collapsed' class on the cards themselves if they are too long
-    document.querySelectorAll('.result-snippet').forEach(snippet => {
-        if (allAbstractsExpanded) {
-            snippet.style.webkitLineClamp = 'initial';
-            snippet.style.maxHeight = 'none';
-        } else {
-            snippet.style.webkitLineClamp = '3';
-            snippet.style.maxHeight = '';
-        }
-    });
-
-    if (btn) {
-        btn.innerHTML = allAbstractsExpanded ? `
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/>
-            </svg>
-            Collapse All
-        ` : `
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/>
-            </svg>
-            Expand All
-        `;
-    }
-}
-
-/**
- * Copies URLs of all currently selected articles
- */
-function copySelectedUrls() {
-    if (selectedArticles.size === 0) {
-        showToast('No articles selected', 'info');
-        return;
-    }
-
-    const urls = [];
-    selectedArticles.forEach(id => {
-        const result = currentResults.find(r => String(r.id) === String(id));
-        if (result) {
-            const externalUrl = getExternalUrl(result);
-            const url = externalUrl || window.location.href;
-            urls.push(`${result.title}\n${url}`);
-        }
-    });
-
-    navigator.clipboard.writeText(urls.join('\n\n')).then(() => {
-        showToast(`Copied ${urls.length} URLs to clipboard`, 'success');
-    });
-}
-
-/**
- * Toggles the history dropdown in the header
- */
-function saveSearchHistory(query) {
-    if (!query) return;
-
-    // Remove if already exists to move to top
-    searchHistory = searchHistory.filter(h => {
-        const hQuery = typeof h === 'string' ? h : h.query;
-        return hQuery !== query;
-    });
-
-    // Add to top with timestamp
-    searchHistory.unshift({
-        query: query,
-        timestamp: Date.now()
-    });
-
-    // Keep only last 20
-    searchHistory = searchHistory.slice(0, 20);
-
-    localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
-
-    // Update UI components
-    renderHistoryDropdown();
-}
-
-function toggleHistoryDropdown() {
-    const dropdown = document.getElementById('history-header-dropdown');
-    if (!dropdown) return;
-
-    const isHidden = dropdown.classList.contains('hidden');
-
-    // Close other dropdowns
-    document.getElementById('notification-dropdown')?.classList.add('hidden');
-
-    if (isHidden) {
-        renderHistoryDropdown();
-        dropdown.classList.remove('hidden');
-
-        // Close on click outside
-        const closeHistory = (e) => {
-            if (!dropdown.contains(e.target) && !e.target.closest('.history-btn')) {
-                dropdown.classList.add('hidden');
-                document.removeEventListener('click', closeHistory);
-            }
-        };
-        setTimeout(() => document.addEventListener('click', closeHistory), 10);
-    } else {
-        dropdown.classList.add('hidden');
-    }
-}
-
-function renderHistoryDropdown() {
-    const list = document.getElementById('history-header-list');
-    if (!list) return;
-
-    if (searchHistory.length === 0) {
-        list.innerHTML = '<div class="empty-state">No search history yet</div>';
-        return;
-    }
-
-    list.innerHTML = searchHistory.slice(0, 10).map(h => {
-        const query = typeof h === 'string' ? h : h.query;
-        const timestamp = typeof h === 'object' && h.timestamp ? h.timestamp : null;
-
-        let timeStr = '';
-        if (timestamp) {
-            const d = new Date(timestamp);
-            const datePart = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-            const timePart = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            timeStr = `${datePart} ${timePart}`;
-        }
-
-        return `
-            <div class="notification-item" onclick="selectHistoryItem(this.querySelector('.notification-title').textContent)">
-                <div class="notification-content">
-                    <span class="notification-title">${escapeHtml(query)}</span>
-                    <span class="notification-time">${timeStr}</span>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-function selectHistoryItem(query) {
-    headerSearchInput.value = query;
-    document.getElementById('history-header-dropdown')?.classList.add('hidden');
-    performSearch();
-}
-
-function clearHistory() {
-    if (confirm('Clear all search history?')) {
-        searchHistory = [];
-        localStorage.setItem('searchHistory', JSON.stringify([]));
-        renderHistoryDropdown();
-        showToast('Search history cleared', 'success');
     }
 }
 
@@ -1354,70 +983,37 @@ function updateAlphaLabel(value) {
 // API HEALTH CHECK
 // ==========================================
 async function checkHealth() {
-    const sDot = document.getElementById('status-dot');
-    const sText = document.getElementById('status-text');
-
-    // If browser is explicitly offline, update UI and stop check
-    if (!navigator.onLine) {
-        console.log('checkHealth: Browser is OFFLINE');
-        if (sDot) {
-            sDot.classList.remove('online');
-            sDot.classList.add('offline');
-        }
-        if (sText) sText.textContent = 'Offline';
-        window.isBackendOnline = false;
-        // Schedule retry
-        if (window.healthCheckTimer) clearTimeout(window.healthCheckTimer);
-        window.healthCheckTimer = setTimeout(checkHealth, 5000);
-        return;
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
     try {
         const response = await fetch(`${API_BASE_URL}/health`, {
-            headers: { 'Accept': 'application/json' },
-            signal: controller.signal
+            headers: { 'ngrok-skip-browser-warning': 'true' },
+            timeout: 5000
         });
-        clearTimeout(timeoutId);
-
         const data = await response.json();
 
-        if (data.status === 'healthy' || data.status === 'online' || data.status === 'degraded') {
-            if (sDot) {
-                sDot.classList.remove('offline');
-                sDot.classList.add('online');
-            }
-            if (sText) sText.textContent = 'Online';
+        if (data.status === 'healthy' || data.status === 'degraded') {
+            statusDot?.classList.remove('offline');
+            statusDot?.classList.add('online');
+            if (statusText) statusText.textContent = 'Online';
             window.isBackendOnline = true;
 
             // Remove demo banner if present
             const banner = document.getElementById('demo-banner');
             if (banner) banner.remove();
         } else {
-            if (sDot) {
-                sDot.classList.remove('online');
-                sDot.classList.add('offline');
-            }
-            if (sText) sText.textContent = 'Degraded';
+            statusDot?.classList.remove('online');
+            statusDot?.classList.add('offline');
+            if (statusText) statusText.textContent = 'Degraded';
             window.isBackendOnline = false;
         }
     } catch (error) {
-        clearTimeout(timeoutId);
-        if (sDot) {
-            sDot.classList.remove('online');
-            sDot.classList.add('offline');
-        }
-        if (sText) sText.textContent = 'Offline';
+        statusDot?.classList.add('offline');
+        if (statusText) statusText.textContent = 'Offline';
         window.isBackendOnline = false;
-        console.warn('Backend not available:', error.message);
+        console.log('Backend not available - running in demo mode, retrying in 5s...');
         showDemoBanner();
-    } finally {
-        // ALWAYS schedule next check - every 30s if online, faster if offline was handled in catch/early return
-        // We use a property to avoid multiple overlapping timers
-        if (window.healthCheckTimer) clearTimeout(window.healthCheckTimer);
-        window.healthCheckTimer = setTimeout(checkHealth, 30000);
+
+        // Retry after 5 seconds
+        setTimeout(checkHealth, 5000);
     }
 }
 
@@ -1449,30 +1045,14 @@ async function loadStatistics() {
         const trialsDocs = data.clinical_trials?.document_count || 0;
         const totalDocs = pubmedDocs + trialsDocs;
 
-        const pubmedText = pubmedDocs.toLocaleString();
-        const trialsText = trialsDocs.toLocaleString();
-        const totalText = totalDocs > 0 ? totalDocs.toLocaleString() + '+' : '0';
-
-        // Update all PubMed count elements
-        pubmedCountVals.forEach(el => {
-            el.textContent = pubmedText;
-        });
-
-        // Update all Clinical Trials count elements
-        trialsCountVals.forEach(el => {
-            el.textContent = trialsText;
-        });
-
-        // Update all Total count elements
-        totalDocsCountVals.forEach(el => {
-            el.textContent = totalText;
-        });
+        if (pubmedCount) pubmedCount.textContent = pubmedDocs.toLocaleString();
+        if (trialsCount) trialsCount.textContent = trialsDocs.toLocaleString();
+        if (totalDocsCount) {
+            totalDocsCount.textContent = totalDocs > 0 ? totalDocs.toLocaleString() + '+' : '0';
+        }
     } catch (error) {
         console.error('Failed to load statistics:', error);
-        const allStats = [...pubmedCountVals, ...trialsCountVals, ...totalDocsCountVals];
-        allStats.forEach(el => {
-            el.textContent = '---';
-        });
+        if (totalDocsCount) totalDocsCount.textContent = '---';
     }
 }
 
@@ -1503,26 +1083,18 @@ window.addEventListener('scroll', () => {
 });
 
 async function performSearch() {
-    console.log('performSearch() triggered. Query:', headerSearchInput?.value);
-
-    const query = headerSearchInput?.value?.trim();
-    if (!query) {
-        showToast('Please enter a search query', 'info');
-        return;
-    }
+    const query = headerSearchInput?.value.trim();
+    if (!query) return;
 
     currentQuery = query;
     currentPage = 1;
+    addToSearchHistory(query);
 
-    // Save to history
-    saveSearchHistory(query);
+    if (headerSearchBtn) headerSearchBtn.disabled = true;
 
-    if (headerSearchBtn) {
-        headerSearchBtn.disabled = true;
-        headerSearchBtn.classList.add('loading');
-    }
-
-    // Layout is managed by switchTab
+    // Remove full-width mode to show sidebar
+    const mainContainer = document.querySelector('.main-container');
+    if (mainContainer) mainContainer.classList.remove('full-width');
 
     // Show skeleton, hide actual results
     const skeleton = document.getElementById('skeleton-loader');
@@ -1531,15 +1103,10 @@ async function performSearch() {
     if (skeleton) skeleton.classList.remove('hidden');
     if (searchLoader) searchLoader.classList.remove('hidden');
 
-    const searchResults = document.getElementById('search-results');
-    const quickFilters = document.getElementById('quick-filters');
-
     if (searchResults) {
         searchResults.innerHTML = ''; // Clear results while loading
         searchResults.classList.add('hidden');
-        searchResults.style.paddingBottom = '0';
     }
-    if (quickFilters) quickFilters.classList.add('hidden');
 
     try {
         let index = 'both';
@@ -1599,53 +1166,6 @@ async function performSearch() {
     }
 }
 
-function clearSearchInput() {
-    if (headerSearchInput) {
-        headerSearchInput.value = '';
-        headerSearchInput.focus();
-        handleSearchInput();
-        toggleClearButton();
-
-        // Show welcome state if query is empty
-        const welcomeState = document.querySelector('.welcome-state');
-        if (welcomeState) {
-            welcomeState.style.display = 'flex';
-            if (searchResults) searchResults.innerHTML = '';
-            searchResults.appendChild(welcomeState);
-            renderSuggestedQueries(); // Change cards every time search is cleared
-            resultsCount.textContent = 'Ready for research';
-            pagination.classList.add('hidden');
-        }
-    }
-}
-
-function clearAllQuickFilters() {
-    currentFilters = {
-        source: 'all',
-        dateRange: 'any',
-        dateFrom: null,
-        dateTo: null,
-        sortBy: 'relevance',
-        useReranking: true,
-        highlightMatches: true,
-        alpha: 50,
-        language: 'any',
-        articleTypes: ['research', 'review', 'meta-analysis', 'case-study']
-    };
-
-    // Reset slider
-    const slider = document.getElementById('quick-alpha-slider');
-    if (slider) slider.value = 50;
-
-    updateSidebarUI();
-
-    if (headerSearchInput.value.trim()) {
-        performSearch();
-    }
-
-    showToast('Filters reset to default', 'info');
-}
-
 function toggleQuickFilter(type, value) {
     // Update State
     if (type === 'source') {
@@ -1684,31 +1204,57 @@ function updateSidebarUI() {
 
     // Update Quick Filter Chips Logic
     document.querySelectorAll('.quick-filter-chip').forEach(q => {
-        const onclick = q.getAttribute('onclick') || '';
+        const onclick = q.getAttribute('onclick');
         let isActive = false;
-
-        if (onclick.includes("'source'") && onclick.includes(`'${currentFilters.source}'`)) {
-            isActive = true;
-        } else if (onclick.includes("'dateRange'") && onclick.includes(`'${currentFilters.dateRange}'`)) {
-            isActive = true;
-        } else if (onclick.includes("'articleTypes'") &&
-            currentFilters.articleTypes.length === 1 &&
-            onclick.includes(`'${currentFilters.articleTypes[0]}'`)) {
-            isActive = true;
-        }
+        if (onclick.includes(`'${currentFilters.source}'`) && currentFilters.source !== 'all') isActive = true;
+        else if (onclick.includes(`'${currentFilters.dateRange}'`) && currentFilters.dateRange !== 'any') isActive = true;
+        else if (onclick.includes(`'articleTypes'`) && currentFilters.articleTypes.length === 1 && onclick.includes(`'${currentFilters.articleTypes[0]}'`)) isActive = true;
 
         if (isActive) q.classList.add('active');
         else q.classList.remove('active');
     });
-
-    // Update Quick Alpha Slider
-    const quickSlider = document.getElementById('quick-alpha-slider');
-    if (quickSlider) {
-        quickSlider.value = currentFilters.alpha;
-    }
 }
 
+function shareSearch() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+        showToast('Search link copied to clipboard!', 'success');
+    }).catch(err => {
+        console.error('Could not copy text: ', err);
+        showToast('Failed to copy link', 'error');
+    });
+}
 
+function exportResults(format) {
+    if (!currentResults || currentResults.length === 0) {
+        showToast('No results to export', 'info');
+        return;
+    }
+
+    if (format === 'csv') {
+        const headers = ['ID', 'Title', 'Source', 'Publication Date', 'Authors', 'Score'];
+        const rows = currentResults.map(r => [
+            r.id,
+            `"${(r.title || '').replace(/"/g, '""')}"`,
+            r.source,
+            r.metadata?.publication_date || '',
+            `"${ensureAuthorsArray(r.metadata?.authors).join(', ').replace(/"/g, '""')}"`,
+            r.score
+        ]);
+
+        const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `biomed_search_results_${new Date().getTime()}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('Results exported to CSV', 'success');
+    }
+}
 
 function displayCurrentResults() {
     if (!currentResults || currentResults.length === 0) {
@@ -1735,19 +1281,7 @@ function displayCurrentResults() {
     const pageResults = results.slice(startIdx, endIdx);
 
     if (resultsCount) {
-        const pubmedResults = results.filter(r => r.source === 'pubmed').length;
-        const trialsResults = results.length - pubmedResults;
-
-        let subCountText = '';
-        if (pubmedResults > 0 && trialsResults > 0) {
-            subCountText = ` (&nbsp;${pubmedResults.toLocaleString()} PubMed, ${trialsResults.toLocaleString()} Trials&nbsp;)`;
-        } else if (pubmedResults > 0) {
-            subCountText = ` (&nbsp;${pubmedResults.toLocaleString()} PubMed&nbsp;)`;
-        } else if (trialsResults > 0) {
-            subCountText = ` (&nbsp;${trialsResults.toLocaleString()} Trials&nbsp;)`;
-        }
-
-        resultsCount.innerHTML = `About <strong>${results.length.toLocaleString()}</strong> results${subCountText}`;
+        resultsCount.innerHTML = `About <strong>${results.length.toLocaleString()}</strong> results`;
     }
 
     if (searchResults) {
@@ -1760,16 +1294,6 @@ function displayCurrentResults() {
                 window.revealObserver.observe(card);
             });
         }
-
-        // Ensure space for floating quick filters
-        searchResults.style.paddingBottom = '80px';
-    }
-
-    // Show quick filters
-    const quickFilters = document.getElementById('quick-filters');
-    if (quickFilters) {
-        quickFilters.classList.remove('hidden');
-        updateSidebarUI(); // Ensure chips reflect state
     }
 
     // Update pagination
@@ -1871,25 +1395,6 @@ function extractYear(dateStr) {
     return match ? parseInt(match[0]) : null;
 }
 
-function handleQuickAlpha(value) {
-    const val = parseInt(value);
-    currentFilters.alpha = val;
-
-    // Sync sidebar slider if it exists
-    const sidebarSlider = document.getElementById('alpha-slider');
-    if (sidebarSlider) {
-        sidebarSlider.value = val;
-    }
-
-    // Update the visual labels (semantic/keyword mix)
-    updateAlphaLabel(val);
-
-    // If we have an active search, re-run it with new alpha weighting
-    if (currentQuery) {
-        performSearch();
-    }
-}
-
 function formatDate(dateStr) {
     if (!dateStr) return '';
 
@@ -1944,17 +1449,12 @@ function showRelatedSearches(query) {
     const queryLower = query.toLowerCase();
     let related = [];
 
-    // Assuming 'related' starts as an empty array: const related = [];
-
     for (const [key, values] of Object.entries(relatedSearches)) {
-        // Basic substring match
         if (queryLower.includes(key)) {
-            related.push(...values);
+            related = [...related, ...values];
         }
     }
 
-    // Clean up duplicates at the end
-    const finalRelatedSearches = [...new Set(related)];
     if (related.length === 0) {
         relatedContainer.classList.add('hidden');
         return;
@@ -1964,13 +1464,7 @@ function showRelatedSearches(query) {
     related = [...new Set(related)].filter(r => r.toLowerCase() !== queryLower).slice(0, 5);
 
     relatedTags.innerHTML = related.map(r =>
-        `<button class="related-tag" onclick="setExampleQuery('${escapeHtml(r)}')">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="M21 21l-4.35-4.35"/>
-            </svg>
-            ${escapeHtml(r)}
-        </button>`
+        `<button class="related-tag" onclick="setExampleQuery('${escapeHtml(r)}')">${escapeHtml(r)}</button>`
     ).join('');
 
     relatedContainer.classList.remove('hidden');
@@ -2004,15 +1498,10 @@ function createResultCard(result) {
         }
     }
 
-    // Safely grab the raw author data
-    const rawAuthors = result.metadata?.authors || result.authors;
-
-    // Force it into an array, guaranteeing .slice() and .join() will always work
-    const authorsArray = ensureAuthorsArray(rawAuthors);
-
-    // Build the text safely
-    const authorText = (authorsArray.length > 0)
-        ? authorsArray.slice(0, 3).join(', ') + (authorsArray.length > 3 ? ' et al.' : '')
+    // Sanitize authors inline for maximum reliability
+    const authors = ensureAuthorsArray(result.metadata?.authors || result.authors);
+    const authorText = (authors.length > 0)
+        ? authors.slice(0, 3).join(', ') + (authors.length > 3 ? ' et al.' : '')
         : (isPubMed ? 'Multiple Authors' : 'Scientific Group');
 
     // Mock type logic (same as in filter)
@@ -2037,6 +1526,7 @@ function createResultCard(result) {
                 </a>
                 <div class="result-meta">
                     <span class="meta-source ${sourceClass}">${sourceLabel}</span>
+                    <span class="meta-separator">•</span>
                     <span class="meta-authors">${authorText}</span>
                     <span class="meta-separator">•</span>
                     <span class="meta-date">${date}</span>
@@ -2046,44 +1536,36 @@ function createResultCard(result) {
                 <div class="result-snippet">
                     ${abstract}
                 </div>
-                <div class="result-actions">
-                    <button class="result-action-btn bookmark-btn ${isBookmarked ? 'active' : ''}" onclick="toggleBookmark('${resultDataB64}', this)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="${isBookmarked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
-                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-                        </svg>
-                        ${isBookmarked ? 'Saved' : 'Save'}
-                    </button>
-                    <button class="result-action-btn" onclick="openCitationModal('${resultDataB64}')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 6 9 6 9zM18 9h1.5a2.5 2.5 0 0 0 0-5C17 4 18 9 18 9z" />
-                            <path d="M6 22V9M18 22V9" />
-                        </svg>
-                        Cite
-                    </button>
-                    <button class="result-action-btn" onclick="shareArticle('${resultDataB64}')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="18" cy="5" r="3" />
-                            <circle cx="6" cy="12" r="3" />
-                            <circle cx="18" cy="19" r="3" />
-                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                        </svg>
-                        Share
-                    </button>
-                    ${externalUrl ? `<a href="${externalUrl}" target="_blank" rel="noopener" class="result-action-btn primary">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                            <polyline points="15 3 21 3 21 9"/>
-                            <line x1="10" y1="14" x2="21" y2="3"/>
-                        </svg>
-                        Source
-                    </a>` : ''}
-                    <div class="result-score-badge" title="Relevance Score: ${result.score?.toFixed(4) || 'N/A'}">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                           <path d="M12 2v20M2 12h20" />
-                        </svg>
-                        Score: ${result.score?.toFixed(2) || 'N/A'}
-                    </div>
+            </div>
+            <div class="result-actions">
+                <button class="result-action-btn bookmark-btn ${isBookmarked ? 'active' : ''}" onclick="toggleBookmark('${resultDataB64}', this)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="${isBookmarked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                    </svg>
+                    ${isBookmarked ? 'Saved' : 'Save'}
+                </button>
+                <button class="result-action-btn" onclick="openCitationModal('${resultDataB64}')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 6 9 6 9zM18 9h1.5a2.5 2.5 0 0 0 0-5C17 4 18 9 18 9z" />
+                        <path d="M6 22V9M18 22V9" />
+                    </svg>
+                    Cite
+                </button>
+                ${externalUrl ? `<a href="${externalUrl}" target="_blank" rel="noopener" class="result-action-btn primary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                        <polyline points="15 3 21 3 21 9"/>
+                        <line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                    View Source
+                </a>` : ''}
+                <div class="result-score-badge" title="Relevance Score">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                       <circle cx="12" cy="12" r="10"/>
+                       <line x1="12" y1="16" x2="12" y2="12"/>
+                       <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    ${result.score?.toFixed(2) || 'N/A'}
                 </div>
             </div>
         </div>
@@ -2137,49 +1619,6 @@ function getExternalUrl(result) {
     return null;
 }
 
-/**
- * Shares an article using Web Share API or clipboard fallback
- */
-function shareArticle(b64Data) {
-    try {
-        const jsonStr = decodeURIComponent(escape(atob(b64Data)));
-        const article = JSON.parse(jsonStr);
-        const title = article.title;
-        const externalUrl = getExternalUrl(article);
-        const url = externalUrl || window.location.href;
-
-        const text = `Check out this article: "${title}"`;
-
-        if (navigator.share) {
-            navigator.share({
-                title: title,
-                text: text,
-                url: url
-            }).catch(err => {
-                if (err.name !== 'AbortError') console.error('Share failed:', err);
-            });
-        } else {
-            navigator.clipboard.writeText(`${text} ${url}`).then(() => {
-                showToast('Article link copied to clipboard', 'success');
-            });
-        }
-    } catch (error) {
-        console.error('Error sharing article:', error);
-    }
-}
-
-function shareArticleFromModal() {
-    if (!window.currentArticleId) return;
-
-    let result = currentResults.find(r => String(r.id) === String(window.currentArticleId));
-    if (!result) result = readingList.find(r => String(r.id) === String(window.currentArticleId));
-
-    if (result) {
-        const resultDataB64 = btoa(unescape(encodeURIComponent(JSON.stringify(result))));
-        shareArticle(resultDataB64);
-    }
-}
-
 // ==========================================
 // READING LIST / BOOKMARKS
 // ==========================================
@@ -2217,14 +1656,6 @@ function toggleBookmark(b64Data, button) {
                 Saved
             `;
             showToast('Added to reading list', 'success');
-
-            // Add notification
-            addNotification({
-                title: 'Article Saved',
-                body: `"${truncate(result.title, 40)}" has been added to your collection.`,
-                type: 'save',
-                data: b64Data
-            });
         }
 
         localStorage.setItem('readingList', JSON.stringify(readingList));
@@ -2270,54 +1701,15 @@ function renderReadingList() {
         const externalUrl = getExternalUrl(item);
         return `
             <div class="reading-list-item">
-                <div class="reading-list-item-content">
-                    <a class="reading-list-item-title" href="#" onclick="openArticleModal('${item.id}'); return false;">${escapeHtml(item.title)}</a>
-                    <div class="reading-list-item-meta">
-                        <span class="meta-date">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                                <line x1="16" y1="2" x2="16" y2="6"/>
-                                <line x1="8" y1="2" x2="8" y2="6"/>
-                                <line x1="3" y1="10" x2="21" y2="10"/>
-                            </svg>
-                            ${item.metadata?.publication_date || 'N/A'}
-                        </span>
-                        <span class="meta-separator">•</span>
-                        <span class="meta-source-pill ${item.source === 'pubmed' ? 'source-pubmed' : 'source-clinical'}">
-                            ${item.source === 'pubmed' ? 'PubMed' : 'Clinical Trial'}
-                        </span>
-                    </div>
+                <a class="reading-list-item-title" href="#" onclick="openArticleModal('${item.id}'); return false;">${escapeHtml(item.title)}</a>
+                <div class="reading-list-item-meta">
+                    ${item.metadata?.publication_date || ''} • ${item.source === 'pubmed' ? 'PubMed' : 'Clinical Trial'}
                 </div>
                 <div class="reading-list-item-actions">
-                    <button class="action-btn details" onclick="openArticleModal('${item.id}')" title="View Details">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                        Details
-                    </button>
-                    <button class="action-btn cite" onclick="openCitationModalById('${item.id}')" title="Cite Article">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                        </svg>
-                        Cite
-                    </button>
-                    ${externalUrl ? `
-                    <a href="${externalUrl}" target="_blank" class="action-btn source" title="Open Source">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                            <polyline points="15 3 21 3 21 9"/>
-                            <line x1="10" y1="14" x2="21" y2="3"/>
-                        </svg>
-                        Source
-                    </a>` : ''}
-                    <button class="action-btn remove" onclick="removeFromReadingList('${item.id}')" title="Remove from list">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                        </svg>
-                        Remove
-                    </button>
+                    <button onclick="removeFromReadingList('${item.id}')">Remove</button>
+                    <button onclick="openArticleModal('${item.id}')">Details</button>
+                    <button onclick="openCitationModalById('${item.id}')">Cite</button>
+                    ${externalUrl ? `<a href="${externalUrl}" target="_blank" class="text-btn">Source</a>` : ''}
                 </div>
             </div>
         `;
@@ -2350,24 +1742,22 @@ function exportReadingList(format) {
 
     if (format === 'csv') {
         const csv = [
-            ['Title', 'Source', 'Date', 'Authors', 'Journal', 'URL'].join(','),
+            ['Title', 'Source', 'Date', 'URL'].join(','),
             ...readingList.map(item => [
                 `"${item.title.replace(/"/g, '""')}"`,
-                item.source === 'pubmed' ? 'PubMed' : 'Clinical Trial',
-                item.metadata?.publication_date || 'N/A',
-                `"${ensureAuthorsArray(item.metadata?.authors).join('; ').replace(/"/g, '""')}"`,
-                `"${(item.metadata?.journal || 'N/A').replace(/"/g, '""')}"`,
+                item.source,
+                item.metadata?.publication_date || '',
                 getExternalUrl(item) || ''
             ].join(','))
         ].join('\n');
 
-        downloadFile(csv, 'biomed_scholar_reading_list.csv', 'text/csv');
+        downloadFile(csv, 'reading_list.csv', 'text/csv');
     } else if (format === 'bibtex') {
         const bibtex = readingList.map(item => generateBibtex(item)).join('\n\n');
-        downloadFile(bibtex, 'biomed_scholar_reading_list.bib', 'text/plain');
+        downloadFile(bibtex, 'reading_list.bib', 'text/plain');
     }
 
-    showToast(`Exported ${readingList.length} articles from reading list`, 'success');
+    showToast(`Exported ${readingList.length} articles`, 'success');
 }
 
 // ==========================================
@@ -2378,7 +1768,7 @@ function openCitationModal(b64Data) {
         const jsonStr = decodeURIComponent(escape(atob(b64Data)));
         currentCitationArticle = JSON.parse(jsonStr);
         updateCitationText();
-        document.getElementById('citation-modal')?.classList.add('open');
+        document.getElementById('citation-modal')?.classList.add('show');
     } catch (error) {
         console.error('Error opening citation modal:', error);
     }
@@ -2389,12 +1779,12 @@ function openCitationModalById(id) {
     if (article) {
         currentCitationArticle = article;
         updateCitationText();
-        document.getElementById('citation-modal')?.classList.add('open');
+        document.getElementById('citation-modal')?.classList.add('show');
     }
 }
 
 function closeCitationModal() {
-    document.getElementById('citation-modal')?.classList.remove('open');
+    document.getElementById('citation-modal')?.classList.remove('show');
 }
 
 function switchModalTab(tabId) {
@@ -2482,49 +1872,48 @@ function copyCitation() {
 }
 
 // ==========================================
-// EXPORT
+// EXPORT & SHARE
 // ==========================================
 function exportResults(format) {
-    if (!currentResults || currentResults.length === 0) {
+    if (currentResults.length === 0) {
         showToast('No results to export', 'error');
         return;
     }
 
     if (format === 'csv') {
         const csv = [
-            ['Title', 'Source', 'Date', 'Authors', 'Journal', 'URL'].join(','),
+            ['Title', 'Source', 'Date', 'Authors', 'Abstract', 'URL'].join(','),
             ...currentResults.map(r => [
                 `"${r.title.replace(/"/g, '""')}"`,
-                r.source === 'pubmed' ? 'PubMed' : 'Clinical Trial',
-                r.metadata?.publication_date || 'N/A',
-                `"${ensureAuthorsArray(r.metadata?.authors).join('; ').replace(/"/g, '""')}"`,
-                `"${(r.metadata?.journal || 'N/A').replace(/"/g, '""')}"`,
+                r.source,
+                r.metadata?.publication_date || '',
+                `"${ensureAuthorsArray(r.metadata?.authors).join('; ')}"`,
+                `"${(r.abstract || '').substring(0, 500).replace(/"/g, '""')}"`,
                 getExternalUrl(r) || ''
             ].join(','))
         ].join('\n');
 
-        downloadFile(csv, 'biomed_scholar_results.csv', 'text/csv');
-        showToast(`Exported ${currentResults.length} results to Excel (CSV)`, 'success');
-    } else if (format === 'bibtex') {
-        const bibtex = currentResults.map(r => generateBibtex(r)).join('\n\n');
-        downloadFile(bibtex, 'biomed_scholar_results.bib', 'text/plain');
-        showToast(`Exported ${currentResults.length} results to BibTeX`, 'success');
+        downloadFile(csv, 'search_results.csv', 'text/csv');
+        showToast(`Exported ${currentResults.length} results`, 'success');
     }
 }
 
+function shareSearch() {
+    const url = new URL(window.location.href);
+    url.searchParams.set('q', currentQuery);
 
+    navigator.clipboard.writeText(url.toString()).then(() => {
+        showToast('Search link copied to clipboard', 'success');
+    });
+}
 
 function downloadFile(content, filename, mimeType) {
-    // Add UTF-8 BOM for Excel compatibility
-    const BOM = "\uFEFF";
-    const blob = new Blob([BOM + content], { type: mimeType + ';charset=utf-8' });
+    const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
-    document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
 
@@ -2532,11 +1921,11 @@ function downloadFile(content, filename, mimeType) {
 // ADVANCED SEARCH
 // ==========================================
 function openAdvancedSearch() {
-    document.getElementById('advanced-search-modal')?.classList.add('open');
+    document.getElementById('advanced-search-modal')?.classList.add('show');
 }
 
 function closeAdvancedSearch() {
-    document.getElementById('advanced-search-modal')?.classList.remove('open');
+    document.getElementById('advanced-search-modal')?.classList.remove('show');
 }
 
 function executeAdvancedSearch() {
@@ -2932,16 +2321,16 @@ function closeDocumentModal() {
 }
 
 function showKeyboardShortcuts() {
-    document.getElementById('shortcuts-modal')?.classList.add('open');
+    document.getElementById('shortcuts-modal')?.classList.add('show');
 }
 
 function closeShortcutsModal() {
-    document.getElementById('shortcuts-modal')?.classList.remove('open');
+    document.getElementById('shortcuts-modal')?.classList.remove('show');
 }
 
 function closeAllModals() {
     document.querySelectorAll('.modal').forEach(modal => {
-        modal.classList.remove('open');
+        modal.classList.remove('show');
     });
     document.body.style.overflow = '';
 }
@@ -3005,8 +2394,42 @@ function showError(message) {
     return `<div class="error-message">⚠️ ${message}</div>`;
 }
 
-// function ensureAuthorsArray is already defined at the top of the file
+function ensureAuthorsArray(authors) {
+    if (!authors) return [];
+    if (Array.isArray(authors)) return authors.filter(a => a && typeof a === 'string');
 
+    if (typeof authors === 'string') {
+        const clean = authors.trim();
+        if (!clean) return [];
+
+        // Try parsing as JSON if it looks like an array
+        if (clean.startsWith('[') && clean.endsWith(']')) {
+            try {
+                // Try standard JSON first
+                const parsed = JSON.parse(clean);
+                if (Array.isArray(parsed)) return parsed;
+            } catch (e) {
+                // Try replacing single quotes with double quotes (common in Python repr)
+                try {
+                    const parsed = JSON.parse(clean.replace(/'/g, '"'));
+                    if (Array.isArray(parsed)) return parsed;
+                } catch (e2) {
+                    // Fallback to comma splitting
+                    return clean.slice(1, -1).split(',').map(s => s.trim()).filter(s => s);
+                }
+            }
+        }
+
+        // Comma separated list
+        if (clean.includes(',')) {
+            return clean.split(',').map(s => s.trim()).filter(s => s);
+        }
+
+        return [clean];
+    }
+
+    return [];
+}
 
 function truncate(text, length) {
     if (!text) return '';
@@ -3094,7 +2517,7 @@ function setExampleQuestion(question) {
 function showHelpModal() {
     const modal = document.getElementById('help-modal');
     if (modal) {
-        modal.classList.add('open');
+        modal.classList.add('show');
         document.body.style.overflow = 'hidden';
         initHelpTabs();
     }
@@ -3103,7 +2526,7 @@ function showHelpModal() {
 function closeHelpModal() {
     const modal = document.getElementById('help-modal');
     if (modal) {
-        modal.classList.remove('open');
+        modal.classList.remove('show');
         document.body.style.overflow = '';
     }
 }
@@ -3187,13 +2610,31 @@ function addComment() {
 }
 
 // Add H key shortcut for help
-// Keyboard Shortcuts and Initialization logic consolidated in initKeyboardShortcuts
+document.addEventListener('keydown', (e) => {
+    // Only trigger if not in an input field
+    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        if (e.key === 'h' || e.key === 'H') {
+            // Don't trigger if Ctrl/Cmd is pressed
+            if (!e.ctrlKey && !e.metaKey) {
+                showHelpModal();
+            }
+        }
+    }
+});
 
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', init);
 
-// Initialized on load section functions removed or moved
+function openAdvancedSearch() {
+    const modal = document.getElementById('advanced-search-modal');
+    if (modal) modal.classList.add('show');
+}
+
+function closeAdvancedSearch() {
+    const modal = document.getElementById('advanced-search-modal');
+    if (modal) modal.classList.remove('show');
+}
 
 function applyAdvancedSearch() {
     const authorInput = document.getElementById('adv-author');
@@ -3213,7 +2654,7 @@ let isRegisterMode = false;
 
 function openLoginModal() {
     const modal = document.getElementById('login-modal');
-    if (modal) modal.classList.add('open');
+    if (modal) modal.classList.add('show');
     // Reset to login mode
     isRegisterMode = false;
     updateAuthModalUI();
@@ -3221,7 +2662,7 @@ function openLoginModal() {
 
 function closeLoginModal() {
     const modal = document.getElementById('login-modal');
-    if (modal) modal.classList.remove('open');
+    if (modal) modal.classList.remove('show');
 }
 
 function toggleAuthMode() {
@@ -3324,7 +2765,49 @@ async function handleGoogleLogin() {
     }
 }
 
-// function updateLoginUI is defined in the profile section
+function updateLoginUI() {
+    const loginBtn = document.querySelector('.login-btn');
+    const existingUserBtn = document.querySelector('.user-profile-btn');
+
+    if (currentUser) {
+        const displayName = currentUser.displayName || currentUser.email.split('@')[0];
+        const initial = displayName[0].toUpperCase();
+
+        const userBtnHtml = `
+            <div class="user-avatar">${initial}</div>
+            <span>${truncate(displayName, 15)}</span>
+        `;
+
+        if (existingUserBtn) {
+            existingUserBtn.innerHTML = userBtnHtml;
+            existingUserBtn.title = `Logged in as ${currentUser.email}`;
+            existingUserBtn.onclick = handleLogout;
+        } else if (loginBtn) {
+            const userBtn = document.createElement('button');
+            userBtn.className = 'header-icon-btn user-profile-btn';
+            userBtn.title = `Logged in as ${currentUser.email}`;
+            userBtn.onclick = handleLogout;
+            userBtn.innerHTML = userBtnHtml;
+            loginBtn.replaceWith(userBtn);
+        }
+    } else {
+        // Show login button
+        if (existingUserBtn) {
+            const newLoginBtn = document.createElement('button');
+            newLoginBtn.className = 'header-icon-btn login-btn';
+            newLoginBtn.onclick = openLoginModal;
+            newLoginBtn.title = 'Login';
+            newLoginBtn.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                </svg>
+                <span>Login</span>
+            `;
+            existingUserBtn.replaceWith(newLoginBtn);
+        }
+    }
+}
 
 async function handleLogout() {
     if (confirm('Are you sure you want to logout?')) {
@@ -3361,64 +2844,40 @@ if (typeof firebase !== 'undefined' && auth) {
 }
 
 // Notification System Logic
-let notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-
-// Default notifications if list is empty
-if (notifications.length === 0) {
-    notifications = [
-        {
-            id: 1,
-            title: 'New Feature: AI Chat',
-            body: 'You can now ask questions about specific papers using our new AI Chat feature!',
-            time: 'Just now',
-            read: false,
-            type: 'feature'
-        },
-        {
-            id: 2,
-            title: 'Welcome to BioMed Scholar',
-            body: 'Thanks for joining our beta program. We indexed over 1,800 new articles today.',
-            time: 'Recently',
-            read: false,
-            type: 'info'
-        }
-    ];
-}
-
-function saveNotifications() {
-    localStorage.setItem('notifications', JSON.stringify(notifications));
-}
-
-function addNotification(notif) {
-    const newNotif = {
-        id: Date.now(),
+let notifications = [
+    {
+        id: 1,
+        title: 'New Feature: AI Chat',
+        body: 'You can now ask questions about specific papers using our new AI Chat feature!',
+        time: '2 hours ago',
         read: false,
-        time: 'Just now',
-        ...notif
-    };
-    notifications.unshift(newNotif);
-    // Keep only last 20 notifications
-    if (notifications.length > 20) notifications.pop();
-    saveNotifications();
-    updateNotificationUI();
-}
+        type: 'feature'
+    },
+    {
+        id: 2,
+        title: 'Welcome to BioMed Scholar',
+        body: 'Thanks for joining our beta program. We indexed over 1,800 new articles today.',
+        time: '1 day ago',
+        read: false,
+        type: 'info'
+    }
+];
 
 function toggleNotifications() {
     const dropdown = document.getElementById('notification-dropdown');
-    dropdown?.classList.toggle('hidden');
-    if (dropdown && !dropdown.classList.contains('hidden')) {
-        updateNotificationUI();
-    }
+    dropdown.classList.toggle('hidden');
 }
 
 function updateNotificationUI() {
     const list = document.getElementById('notification-list');
     const countBadge = document.getElementById('notification-count');
 
+    // Safety check if elements don't exist yet
     if (!list || !countBadge) return;
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
+    // Update Badge
     if (unreadCount > 0) {
         countBadge.textContent = unreadCount;
         countBadge.classList.remove('hidden');
@@ -3426,6 +2885,7 @@ function updateNotificationUI() {
         countBadge.classList.add('hidden');
     }
 
+    // Update List
     if (notifications.length === 0) {
         list.innerHTML = `
             <div class="empty-state">
@@ -3455,11 +2915,6 @@ function getNotificationIcon(type) {
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
         </svg>`;
     }
-    if (type === 'save') {
-        return `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
-            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-        </svg>`;
-    }
     return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"/>
         <line x1="12" y1="16" x2="12" y2="12"/>
@@ -3469,7 +2924,6 @@ function getNotificationIcon(type) {
 
 function markAllNotificationsRead() {
     notifications.forEach(n => n.read = true);
-    saveNotifications();
     updateNotificationUI();
 }
 
@@ -3477,26 +2931,25 @@ function markNotificationRead(id) {
     const notif = notifications.find(n => n.id === id);
     if (notif) {
         notif.read = true;
-        saveNotifications();
         updateNotificationUI();
     }
 }
 
 function handleNotificationClick(id, type) {
-    const notif = notifications.find(n => n.id === id);
     markNotificationRead(id);
 
+    // Close dropdown
     const dropdown = document.getElementById('notification-dropdown');
     dropdown?.classList.add('hidden');
 
     if (type === 'feature') {
+        // Navigate to AI Chat (QA) tab
         switchTab('qa');
+        // Optional: Focus the input
         setTimeout(() => {
             const input = document.getElementById('qa-input');
-            input?.focus();
+            if (input) input.focus();
         }, 100);
-    } else if (type === 'save' && notif && notif.data) {
-        openDocumentModalFromB64(notif.data);
     }
 }
 
@@ -3514,10 +2967,38 @@ document.addEventListener('click', (e) => {
 });
 
 // Initialize Notifications and Health Check on Load
-// Redundant initialization handled by init()
+document.addEventListener('DOMContentLoaded', () => {
+    updateNotificationUI();
+    checkBackendHealth();
+    setInterval(checkBackendHealth, 30000); // Check every 30 seconds
+});
 
+async function checkBackendHealth() {
+    const statusText = document.getElementById('status-text');
+    const statusDot = document.getElementById('status-dot');
 
-// Selection & Local Filtering
+    if (!statusText || !statusDot) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/health`, {
+            headers: { 'ngrok-skip-browser-warning': 'true' }
+        });
+        if (response.ok) {
+            statusText.textContent = 'Online';
+            statusDot.className = 'status-dot online';
+        } else {
+            throw new Error('Health check failed');
+        }
+    } catch (error) {
+        console.warn('Backend health check failed:', error);
+        statusText.textContent = 'Offline';
+        statusDot.className = 'status-dot offline';
+    }
+}
+
+// ==========================================
+// SELECTION & LOCAL FILTERING
+// ==========================================
 let selectedArticles = new Set();
 
 function toggleArticleSelection(id, element) {
@@ -3573,100 +3054,22 @@ function cancelSelection() {
 }
 
 function bulkSave() {
-    let count = 0;
     selectedArticles.forEach(id => {
         const result = currentResults.find(r => String(r.id) === id);
-        if (result && !readingList.some(item => String(item.id) === id)) {
-            readingList.push({
-                id: result.id,
-                title: result.title,
-                source: result.source,
-                metadata: result.metadata,
-                abstract: result.abstract,
-                savedAt: new Date().toISOString()
-            });
-            count++;
+        if (result) {
+            const dataB64 = btoa(unescape(encodeURIComponent(JSON.stringify(result))));
+            if (!readingList.some(item => item.id === id)) {
+                addToReadingList(dataB64);
+            }
         }
     });
-
-    if (count > 0) {
-        localStorage.setItem('readingList', JSON.stringify(readingList));
-        updateReadingListCount();
-        renderReadingList();
-        // Update result card buttons if they are visible
-        displayCurrentResults();
-        showToast(`Saved ${count} articles to reading list`, 'success');
-    }
+    showToast(`Saved ${selectedArticles.size} articles to reading list`, 'success');
     cancelSelection();
 }
 
-
-
-function saveAllResults() {
-    if (!currentResults || currentResults.length === 0) {
-        showToast('No results to save', 'info');
-        return;
-    }
-
-    let count = 0;
-    currentResults.forEach(result => {
-        const id = String(result.id);
-        if (!readingList.some(item => String(item.id) === id)) {
-            readingList.push({
-                id: result.id,
-                title: result.title,
-                source: result.source,
-                metadata: result.metadata,
-                abstract: result.abstract,
-                savedAt: new Date().toISOString()
-            });
-            count++;
-        }
-    });
-
-    if (count > 0) {
-        localStorage.setItem('readingList', JSON.stringify(readingList));
-        updateReadingListCount();
-        renderReadingList();
-        displayCurrentResults();
-        showToast(`Saved ${count} articles to reading list`, 'success');
-    } else {
-        showToast('All visible articles are already in your reading list', 'info');
-    }
-}
-
-
-
-
-
-function bulkExport(format = 'csv') {
-    if (selectedArticles.size === 0) {
-        showToast('No articles selected for export', 'error');
-        return;
-    }
-
-    const selectedList = currentResults.filter(r => selectedArticles.has(String(r.id)));
-
-    if (format === 'csv') {
-        const csvData = [
-            ['Title', 'Source', 'Date', 'Authors', 'Journal', 'URL'].join(','),
-            ...selectedList.map(item => [
-                `"${item.title.replace(/"/g, '""')}"`,
-                item.source === 'pubmed' ? 'PubMed' : 'Clinical Trial',
-                item.metadata?.publication_date || 'N/A',
-                `"${ensureAuthorsArray(item.metadata?.authors).join('; ').replace(/"/g, '""')}"`,
-                `"${(item.metadata?.journal || 'N/A').replace(/"/g, '""')}"`,
-                getExternalUrl(item) || ''
-            ].join(','))
-        ].join('\n');
-
-        downloadFile(csvData, 'biomed_scholar_selection.csv', 'text/csv');
-        showToast(`Exported ${selectedList.length} articles to Excel (CSV)`, 'success');
-    } else if (format === 'bibtex') {
-        const bibtex = selectedList.map(item => generateBibtex(item)).join('\n\n');
-        downloadFile(bibtex, 'biomed_scholar_selection.bib', 'text/plain');
-        showToast(`Exported ${selectedList.length} articles to BibTeX`, 'success');
-    }
+function bulkExport() {
+    showToast(`Exporting ${selectedArticles.size} articles...`, 'info');
+    // Implement actual export if needed, or just toast for now
 }
 
 function filterResultsLocally() {
@@ -3683,115 +3086,6 @@ function filterResultsLocally() {
         }
     });
 }
-/**
- * Makes the Quick Filters bottom bar draggable across the screen.
- */
-function initDraggableFilters() {
-    const dragElement = document.querySelector('.quick-filters');
-    if (!dragElement) return;
 
-    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
 
-    dragElement.onmousedown = dragMouseDown;
 
-    function dragMouseDown(e) {
-        e = e || window.event;
-
-        // Prevent dragging if clicking on interactive elements
-        const isInteractive = ['INPUT', 'BUTTON', 'A', 'SELECT', 'TEXTAREA'].includes(e.target.tagName) ||
-            e.target.closest('.quick-filter-chip') ||
-            e.target.closest('.quick-alpha-container');
-
-        if (isInteractive) return;
-
-        e.preventDefault();
-
-        // Get the mouse cursor position at startup
-        pos3 = e.clientX;
-        pos4 = e.clientY;
-
-        document.onmouseup = closeDragElement;
-        // Call a function whenever the cursor moves
-        document.onmousemove = elementDrag;
-
-        dragElement.classList.add('grabbing');
-        dragElement.style.transition = 'none';
-
-        // Remove 'fixed' positioning and center transform once we start dragging
-        // To keep it consistent, we use fixed but update left/bottom
-        dragElement.style.transform = 'none';
-        dragElement.style.left = dragElement.offsetLeft + 'px';
-        dragElement.style.top = dragElement.offsetTop + 'px';
-        dragElement.style.bottom = 'auto';
-    }
-
-    function elementDrag(e) {
-        e = e || window.event;
-        e.preventDefault();
-
-        // Calculate the new cursor position
-        pos1 = pos3 - e.clientX;
-        pos2 = pos4 - e.clientY;
-        pos3 = e.clientX;
-        pos4 = e.clientY;
-
-        // Set the element's new position
-        dragElement.style.top = (dragElement.offsetTop - pos2) + "px";
-        dragElement.style.left = (dragElement.offsetLeft - pos1) + "px";
-    }
-
-    function closeDragElement() {
-        // Stop moving when mouse button is released
-        document.onmouseup = null;
-        document.onmousemove = null;
-        dragElement.classList.remove('grabbing');
-    }
-}
-
-// Initial call
-initDraggableFilters();
-
-function setSearchQuery(query) {
-    if (headerSearchInput) {
-        headerSearchInput.value = query;
-        headerSearchInput.focus();
-        performSearch();
-        toggleClearButton();
-    }
-}
-
-function toggleClearButton() {
-    const clearBtn = document.getElementById('clear-search-btn');
-    if (clearBtn) {
-        if (headerSearchInput.value.length > 0) {
-            clearBtn.classList.remove('hidden');
-        } else {
-            clearBtn.classList.add('hidden');
-        }
-    }
-}
-
-function renderSuggestedQueries() {
-    const container = document.querySelector('.suggested-queries');
-    if (!container) return;
-
-    // Shuffle and pick 4
-    const shuffled = [...SUGGESTED_QUERIES].sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, 4);
-
-    container.innerHTML = selected.map(q => `
-        <div class="query-card reveal-item" onclick="setSearchQuery('${q.query.replace(/'/g, "\\'")}')">
-            <div class="query-card-icon">${q.icon}</div>
-            <div class="query-card-tag">${q.tag}</div>
-            <div class="query-card-title">${q.title}</div>
-            <div class="query-card-desc">${q.desc}</div>
-        </div>
-    `).join('');
-
-    // Trigger scroll reveal for new cards
-    if (window.revealObserver) {
-        document.querySelectorAll('.suggested-queries .reveal-item').forEach(el => {
-            window.revealObserver.observe(el);
-        });
-    }
-}

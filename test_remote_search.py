@@ -1,32 +1,30 @@
 import requests
 import json
 
-def test_search():
-    url = "https://sasidhara123-biomed-scholar-api.hf.space/api/v1/search"
-    payload = {
-        "query": "cancer immunotherapy",
-        "top_k": 5
-    }
-    
-    print(f"Testing search at: {url}")
-    try:
-        response = requests.post(url, json=payload, timeout=20)
-        print(f"Status Code: {response.status_code}")
-        
-        if response.status_code == 200:
-            data = response.json()
-            results = data.get("results", [])
-            print(f"Found {len(results)} results")
-            
-            for i, result in enumerate(results):
-                print(f"\nResult {i+1}:")
-                print(f"Title: {result.get('title')}")
-                print(f"Score: {result.get('score')}")
-        else:
-            print(f"Error: {response.text}")
-            
-    except Exception as e:
-        print(f"Failed to connect: {e}")
+url = "https://sasidhara123-biomed-scholar-api.hf.space/api/v1/search"
+payload = {
+    "query": "cancer immunotherapy",
+    "index": "clinical_trials",
+    "max_results": 5,
+    "alpha": 0.5,
+    "use_reranking": True,
+    "sort_by": "relevance",
+    "date_from": None,
+    "date_to": None
+}
 
-if __name__ == "__main__":
-    test_search()
+print(f"Testing URL: {url}")
+try:
+    response = requests.post(url, json=payload, timeout=60)
+    print(f"Status: {response.status_code}")
+    print(f"Response: {response.text[:500]}")
+    
+    if response.status_code == 200:
+        data = response.json()
+        print(f"Total results found: {data.get('total_results', 0)}")
+        for i, result in enumerate(data.get('results', []), 1):
+            print(f"{i}. [{result.get('source')}] {result.get('title')}")
+    else:
+        print("Test failed.")
+except Exception as e:
+    print(f"Error: {e}")
