@@ -1132,22 +1132,7 @@
             </div>
             <div class="modal-body">
                 <div class="shortcuts-grid">
-                    <div class="shortcut-item">
-                        <kbd>Ctrl</kbd> + <kbd>K</kbd>
-                        <span>Focus search</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd>
-                        <span>Advanced search</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <kbd>Escape</kbd>
-                        <span>Close modal</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <kbd>?</kbd>
-                        <span>Show shortcuts</span>
-                    </div>
+                    <div class="shortcut-category">Navigation</div>
                     <div class="shortcut-item">
                         <kbd>1</kbd>
                         <span>Articles tab</span>
@@ -1161,6 +1146,30 @@
                         <span>Trends tab</span>
                     </div>
                     <div class="shortcut-item">
+                        <kbd>←</kbd> <kbd>→</kbd>
+                        <span>Navigate pages</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <kbd>Home</kbd>
+                        <span>Scroll to top</span>
+                    </div>
+
+                    <div class="shortcut-category">Search</div>
+                    <div class="shortcut-item">
+                        <kbd>Ctrl</kbd> + <kbd>K</kbd>
+                        <span>Focus search bar</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd>
+                        <span>Advanced search</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <kbd>Ctrl</kbd> + <kbd>E</kbd>
+                        <span>Export results (CSV)</span>
+                    </div>
+
+                    <div class="shortcut-category">Panels & Actions</div>
+                    <div class="shortcut-item">
                         <kbd>B</kbd>
                         <span>Toggle reading list</span>
                     </div>
@@ -1168,6 +1177,22 @@
                         <kbd>N</kbd>
                         <span>Toggle notifications</span>
                     </div>
+                    <div class="shortcut-item">
+                        <kbd>G</kbd>
+                        <span>Toggle filters sidebar</span>
+                    </div>
+
+                    <div class="shortcut-category">Article Modal</div>
+                    <div class="shortcut-item">
+                        <kbd>S</kbd>
+                        <span>Share article</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <kbd>C</kbd>
+                        <span>Cite article</span>
+                    </div>
+
+                    <div class="shortcut-category">Display</div>
                     <div class="shortcut-item">
                         <kbd>D</kbd>
                         <span>Toggle dark mode</span>
@@ -1177,8 +1202,22 @@
                         <span>Toggle Zen mode</span>
                     </div>
                     <div class="shortcut-item">
-                        <kbd>←</kbd> <kbd>→</kbd>
-                        <span>Navigate pages</span>
+                        <kbd>F</kbd>
+                        <span>Toggle fullscreen</span>
+                    </div>
+
+                    <div class="shortcut-category">Help & Modals</div>
+                    <div class="shortcut-item">
+                        <kbd>?</kbd>
+                        <span>Show shortcuts</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <kbd>H</kbd>
+                        <span>Open help guide</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <kbd>Escape</kbd>
+                        <span>Close modal / panel</span>
                     </div>
                 </div>
             </div>
@@ -1198,6 +1237,7 @@
                     <button class="help-tab" data-section="authentication">Authentication</button>
                     <button class="help-tab" data-section="search-tips">Search & Q&A</button>
                     <button class="help-tab" data-section="library">Library</button>
+                    <button class="help-tab" data-section="shortcuts">Shortcuts</button>
                     <button class="help-tab" data-section="faq">FAQ</button>
                 </div>
 
@@ -1308,8 +1348,11 @@
                             <h4>Reading List</h4>
                             <ul>
                                 <li><strong>Save:</strong> Click the Bookmark icon on any result to save it</li>
-                                <li><strong>View:</strong> Click the Bookmark icon in the header or press 'B'</li>
+                                <li><strong>View:</strong> Click the Bookmark icon in the header or press <kbd>B</kbd>
+                                </li>
                                 <li><strong>Export:</strong> Download your list as CSV or BibTeX from the panel</li>
+                                <li><strong>Save All:</strong> Click "Save All" in results header to bookmark all
+                                    results at once</li>
                             </ul>
                         </div>
 
@@ -1317,10 +1360,99 @@
                             <h4>Citations</h4>
                             <p>Generate citations instantly for any article:</p>
                             <ol>
-                                <li>Click the "Cite" button on a result card</li>
+                                <li>Click the "Cite" button on a result card (or press <kbd>C</kbd> in article modal)
+                                </li>
                                 <li>Choose format: <strong>APA, MLA, Chicago, BibTeX</strong></li>
                                 <li>Click "Copy to Clipboard"</li>
                             </ol>
+                        </div>
+
+                        <div class="help-card">
+                            <h4>Share Articles</h4>
+                            <p>Share articles with colleagues easily:</p>
+                            <ul>
+                                <li><strong>From Results:</strong> Click the "Share" button on any search result card
+                                </li>
+                                <li><strong>From Modal:</strong> Click the share icon in the article detail view, or
+                                    press <kbd>S</kbd></li>
+                                <li><strong>Native Sharing:</strong> Uses your device's native share dialog on mobile
+                                </li>
+                                <li><strong>Clipboard Fallback:</strong> On desktop, the article title and link are
+                                    copied to clipboard</li>
+                            </ul>
+                        </div>
+
+                        <div class="help-card">
+                            <h4>Export Results</h4>
+                            <ul>
+                                <li><strong>CSV:</strong> Click the CSV button in the results header or press
+                                    <kbd>Ctrl</kbd>+<kbd>E</kbd>
+                                </li>
+                                <li><strong>BibTeX:</strong> Click the BibTeX button for reference manager import</li>
+                                <li><strong>Print:</strong> Click the Print button or use <kbd>Ctrl</kbd>+<kbd>P</kbd>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Keyboard Shortcuts -->
+                    <div class="help-section" id="help-shortcuts">
+                        <h3>⌨️ Keyboard Shortcuts</h3>
+                        <p>Speed up your workflow with these keyboard shortcuts. Press <kbd>?</kbd> anytime to see a
+                            quick reference.</p>
+
+                        <div class="help-card">
+                            <h4>Navigation</h4>
+                            <ul>
+                                <li><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> — Switch between Articles, Q&A, and Trends
+                                    tabs</li>
+                                <li><kbd>←</kbd> <kbd>→</kbd> — Navigate between result pages</li>
+                                <li><kbd>Home</kbd> — Scroll back to the top of the page</li>
+                            </ul>
+                        </div>
+
+                        <div class="help-card">
+                            <h4>Search</h4>
+                            <ul>
+                                <li><kbd>Ctrl</kbd>+<kbd>K</kbd> — Focus the search bar from anywhere</li>
+                                <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd> — Open Advanced Search modal</li>
+                                <li><kbd>Ctrl</kbd>+<kbd>E</kbd> — Quick export results as CSV</li>
+                            </ul>
+                        </div>
+
+                        <div class="help-card">
+                            <h4>Panels & Actions</h4>
+                            <ul>
+                                <li><kbd>B</kbd> — Toggle Reading List sidebar</li>
+                                <li><kbd>N</kbd> — Toggle Notifications panel</li>
+                                <li><kbd>G</kbd> — Toggle filters sidebar (mobile)</li>
+                            </ul>
+                        </div>
+
+                        <div class="help-card">
+                            <h4>Article Modal</h4>
+                            <ul>
+                                <li><kbd>S</kbd> — Share the currently open article</li>
+                                <li><kbd>C</kbd> — Generate a citation for the current article</li>
+                            </ul>
+                        </div>
+
+                        <div class="help-card">
+                            <h4>Display & Modes</h4>
+                            <ul>
+                                <li><kbd>D</kbd> — Toggle dark / light mode</li>
+                                <li><kbd>Z</kbd> — Toggle Zen (focus) mode</li>
+                                <li><kbd>F</kbd> — Toggle fullscreen</li>
+                            </ul>
+                        </div>
+
+                        <div class="help-card">
+                            <h4>Help & Modals</h4>
+                            <ul>
+                                <li><kbd>?</kbd> — Show keyboard shortcuts quick reference</li>
+                                <li><kbd>H</kbd> — Open this Help Guide</li>
+                                <li><kbd>Escape</kbd> — Close any open modal or panel</li>
+                            </ul>
                         </div>
                     </div>
 
@@ -1412,7 +1544,7 @@
     <!-- Back to Top Button -->
 
 
-    <script src="app.js?v=1.2.7-sq"></script>
+    <script src="app.js?v=1.3.0-kb"></script>
     <!-- Article Detail Modal -->
     <div id="article-detail-modal" class="article-modal-overlay">
         <div class="article-modal">

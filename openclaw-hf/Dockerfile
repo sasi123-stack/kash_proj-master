@@ -1,4 +1,4 @@
-FROM node:20
+FROM node:24-slim
 
 # Set environment variables
 ENV HOME=/home/node
@@ -9,9 +9,13 @@ ENV NODE_ENV=production
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    procps \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+  procps \
+  git \
+  python3 \
+  make \
+  g++ \
+  cmake \
+  && rm -rf /var/lib/apt/lists/*
 
 # Switch to node user before installing
 USER node
@@ -27,31 +31,36 @@ RUN mkdir -p $OPENCLAW_HOME/workspace
 COPY --chown=node:node workspace $OPENCLAW_HOME/workspace
 
 # Create a streamlined openclaw.json for Cloud environment
-RUN echo '{\n\
-  "meta": {\n\
-    "lastTouchedVersion": "2026.2.15"\n\
-  },\n\
-  "agents": {\n\
-    "defaults": {\n\
-      "model": {\n\
-        "primary": "openrouter/auto"\n\
-      },\n\
-      "workspace": "/home/node/.openclaw/workspace"\n\
-    }\n\
-  },\n\
-  "gateway": {\n\
-    "port": 7860,\n\
-    "mode": "cloud",\n\
-    "bind": "any",\n\
-    "auth": {\n\
-      "mode": "token",\n\
-      "token": "admin-token-123"\n\
-    }\n\
-  }\n\
-}' > $OPENCLAW_HOME/openclaw.json
+# Note: API key will be provided via environment variable at runtime
+RUN echo '{\
+  "meta": {\
+  "lastTouchedVersion": "2026.2.15"\
+  },\
+  "agents": {\
+  "defaults": {\
+  "model": {\
+  "primary": "meta-llama/llama-3.3-70b-instruct"\
+  },\
+  "workspace": "/home/node/.openclaw/workspace"\
+  }\
+  },\
+  "gateway": {\
+  "port": 7860,\
+  "mode": "cloud",\
+  "bind": "any",\
+  "auth": {\
+  "mode": "token",\
+  "token": "admin-token-123"\
+  }\
+  }\
+  }' > $OPENCLAW_HOME/openclaw.json
 
 # Expose the Hugging Face port
 EXPOSE 7860
 
-# Start the gateway using npx (most reliable for finding the module)
-CMD ["npx", "openclaw", "gateway", "--port", "7860", "--bind", "0.0.0.0"]
+# Set working directory to OpenClaw home
+WORKDIR $OPENCLAW_HOME
+
+# Start the gateway
+# OpenRouter API key should be set via OPENROUTER_API_KEY environment variable
+CMD ["npx", "openclaw", "gateway"]

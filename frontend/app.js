@@ -1,4 +1,4 @@
-// BioSense AI v1.2.8 - Dynamic Queries & Modals Fix
+// BioSense AI v1.3.0 - Keyboard Shortcuts & Modal Styling
 // Force version update
 
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -225,6 +225,9 @@ function openArticleModal(resultId) {
     const modal = document.getElementById('article-detail-modal');
     if (!modal) return;
 
+    // Store current article ID for keyboard shortcuts (S, C)
+    window.currentArticleId = result.id;
+
     // Populate modal content
     document.getElementById('modal-article-title').textContent = result.title;
     document.getElementById('modal-article-abstract').textContent = result.abstract || 'No abstract available.';
@@ -335,6 +338,7 @@ function closeArticleModal() {
     const modal = document.getElementById('article-detail-modal');
     modal.classList.remove('open');
     document.body.style.overflow = '';
+    window.currentArticleId = null;
 }
 
 
@@ -616,9 +620,24 @@ function initKeyboardShortcuts() {
             openAdvancedSearch();
         }
 
-        // ? or H - Show/Help
-        if (e.key === '?' || (e.key.toLowerCase() === 'h' && !isMod)) {
+        // Ctrl+E - Export results
+        if (isMod && e.key === 'e') {
+            e.preventDefault();
+            if (currentResults.length > 0) {
+                exportResults('csv');
+            } else {
+                showToast('No results to export', 'info');
+            }
+        }
+
+        // ? - Show keyboard shortcuts
+        if (e.key === '?') {
             showKeyboardShortcuts();
+        }
+
+        // H - Show help guide
+        if (e.key.toLowerCase() === 'h' && !isMod && !e.shiftKey) {
+            showHelpModal();
         }
 
         // 1, 2, 3 - Switch tabs
@@ -646,6 +665,46 @@ function initKeyboardShortcuts() {
             toggleZenMode();
         }
 
+        // S - Share first selected article or current modal article
+        if (e.key.toLowerCase() === 's' && !isMod) {
+            const articleModal = document.getElementById('article-detail-modal');
+            if (articleModal && articleModal.classList.contains('open')) {
+                shareArticleFromModal();
+            }
+        }
+
+        // C - Cite current modal article
+        if (e.key.toLowerCase() === 'c' && !isMod) {
+            const articleModal = document.getElementById('article-detail-modal');
+            if (articleModal && articleModal.classList.contains('open') && window.currentArticleId) {
+                let result = currentResults.find(r => String(r.id) === String(window.currentArticleId));
+                if (!result) result = readingList.find(r => String(r.id) === String(window.currentArticleId));
+                if (result) {
+                    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(result))));
+                    openCitationModal(b64);
+                }
+            }
+        }
+
+        // Home - Scroll to top
+        if (e.key === 'Home' && !isMod) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // G - Toggle sidebar/filters (mobile)
+        if (e.key.toLowerCase() === 'g' && !isMod) {
+            toggleMobileFilters();
+        }
+
+        // F - Toggle fullscreen
+        if (e.key.toLowerCase() === 'f' && !isMod) {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen?.();
+            } else {
+                document.exitFullscreen?.();
+            }
+        }
+
         // Arrow keys for pagination
         if (e.key === 'ArrowLeft' && currentPage > 1 && !isMod) {
             currentPage--;
@@ -664,6 +723,7 @@ function initKeyboardShortcuts() {
             const modals = document.querySelectorAll('.modal.open, .article-modal-overlay.open');
             if (modals.length > 0) {
                 modals.forEach(m => m.classList.remove('open'));
+                document.body.style.overflow = '';
             } else {
                 document.getElementById('notification-dropdown')?.classList.add('hidden');
                 document.getElementById('autocomplete-dropdown')?.classList.add('hidden');

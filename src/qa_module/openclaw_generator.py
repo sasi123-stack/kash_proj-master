@@ -51,10 +51,11 @@ class OpenClawGenerator:
         ])
 
         system_prompt = (
-            "You are a biomedical research assistant powered by OpenClaw. "
-            "Using the provided context passages, synthesize a comprehensive answer to the user's question. "
+            "You are a biomedical research assistant powered by Llama 3.3 70B, a powerful open-source AI model. "
+            "Using the provided context passages, synthesize a comprehensive, evidence-based answer to the user's question. "
             "Cite sources using [1], [2], etc. "
-            "If the answer is not in the context, state that clearly but provide relevant scientific background if appropriate."
+            "If the answer is not in the context, state that clearly but provide relevant scientific background if appropriate. "
+            "Use clear reasoning to connect concepts and identify patterns across sources."
         )
 
         user_content = f"Question: {question}\n\nContext:\n{context_text}"
@@ -62,11 +63,10 @@ class OpenClawGenerator:
         try:
             logger.info(f"Requesting OpenClaw completion for: {question[:50]}...")
             
-            # Using a generic model name 'model' or 'gpt-3.5-turbo' is usually safe for local endpoints
-            # For OpenClaw specifically, we might need a specific model name if it proxies to one.
-            # We'll use a sensible default.
+            # Using OpenRouter's FREE Llama 3.3 70B - no credit card required!
+            # OpenRouter provides free access to Llama models
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini", # Often aliased in local servers
+                model="meta-llama/llama-3.3-70b-instruct", # OpenRouter's free Llama 3.3 70B
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_content}
