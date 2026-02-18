@@ -1,7 +1,10 @@
-// BioSense AI v1.3.0 - Keyboard Shortcuts & Modal Styling
-// Force version update
+// BioMedScholar AI v1.3.1 - Interactive Platform Scaling & Fixed Sidebars
+// Force browser update - unique id: 20260218-1853
 
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+// Use 'var' (which can be redeclared) or check if it exists first
+if (typeof isLocal === 'undefined') {
+    var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+}
 
 /**
  * Robustly ensures authors data is an array of strings.
@@ -29,23 +32,25 @@ function ensureAuthorsArray(authors) {
     return [String(authors)];
 }
 
-const isNgrok = window.location.hostname.includes('ngrok-free') || window.location.hostname.includes('ngrok.io');
-const isFirebase = window.location.hostname.includes('web.app') || window.location.hostname.includes('firebaseapp.com');
-const isVercel = window.location.hostname.includes('vercel.app');
+var isNgrok = window.location.hostname.includes('ngrok-free') || window.location.hostname.includes('ngrok.io');
+var isFirebase = window.location.hostname.includes('web.app') || window.location.hostname.includes('firebaseapp.com');
+var isVercel = window.location.hostname.includes('vercel.app');
 
 // Backend URLs for different environments
-const HF_BACKEND_URL = 'https://sasidhara123-biomed-scholar-api.hf.space/api/v1';
+var HF_BACKEND_URL = 'https://sasidhara123-biomed-scholar-api.hf.space/api/v1';
 
-// API URL configuration
-const API_BASE_URL = (isLocal && !window.location.search.includes('remote=true')) ?
+var API_BASE_URL = (isLocal && !window.location.search.includes('remote=true')) ?
     'http://localhost:8000/api/v1' : HF_BACKEND_URL;
 
-console.log('App initialized. Env:', isLocal ? 'Local' : 'Remote');
-console.log('API Base URL:', API_BASE_URL);
+// Serper.dev API Key (Google Search)
+var SERPER_API_KEY = localStorage.getItem('serper_api_key') || "YOUR_SERPER_API_KEY_HERE";
+
+// Ensure API URL is used correctly in health checks
+window.isBackendOnline = false;
 
 // Firebase Configuration
 // REPLACE THESE VALUES WITH YOUR FIREBASE PROJECT CONFIGURATION
-const firebaseConfig = {
+var firebaseConfig = {
     apiKey: "AIzaSyAGDU8IdYYVEufji3vTz6xBGCrI4uDmXjE",
     authDomain: "biomed-scholar.firebaseapp.com",
     projectId: "biomed-scholar",
@@ -56,7 +61,7 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-let auth;
+var auth;
 if (typeof firebase !== 'undefined') {
     try {
         firebase.initializeApp(firebaseConfig);
@@ -67,7 +72,7 @@ if (typeof firebase !== 'undefined') {
 }
 
 // State
-let currentFilters = {
+var currentFilters = {
     source: 'all',
     dateRange: 'any',
     dateFrom: null,
@@ -77,24 +82,29 @@ let currentFilters = {
     highlightMatches: true,
     alpha: 50,
     language: 'any',
+    subject: 'all',
+    availability: 'all',
     articleTypes: ['research', 'review', 'meta-analysis', 'case-study']
 };
 
-let searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]');
-let readingList = JSON.parse(localStorage.getItem('readingList') || '[]');
-let currentResults = [];
-let currentQuery = '';
-let currentPage = 1;
-let resultsPerPage = 10;
-let currentView = 'list';
-let currentCitationArticle = null;
-let currentCitationFormat = 'apa';
+var searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+var readingList = JSON.parse(localStorage.getItem('readingList') || '[]');
+var currentResults = [];
+var currentQuery = '';
+var currentPage = 1;
+var resultsPerPage = 10;
+var currentView = 'list';
+var currentCitationArticle = null;
+var currentCitationFormat = 'apa';
+var currentSearchAbortController = null;
 
 // Auth State
-let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+var currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+// Notification State (declared in Advanced Notification System)
 
 // Suggestions for autocomplete
-const suggestions = [
+var suggestions = [
     'COVID-19 vaccine efficacy',
     'cancer immunotherapy',
     'diabetes treatment',
@@ -110,72 +120,76 @@ const suggestions = [
 ];
 
 // Randomizable Suggested Queries for Welcome State
-const SUGGESTED_QUERIES = [
-    { title: 'Vaccine Heart Health', icon: '🫀', tag: 'Cardiology', desc: 'Investigate cardiac safety profiles and long-term studies of mRNA technologies.', query: 'Long-term effects of mRNA vaccines on heart health' },
-    { title: 'Sickle Cell CRISPR', icon: '🧬', tag: 'Genetics', desc: 'Explore cutting-edge gene therapy clinical trials and regulatory pathways for blood disorders.', query: 'CRISPR gene editing in sickle cell anemia treatments' },
-    { title: 'Gut-Brain Axis', icon: '🧠', tag: 'Neurology', desc: 'Analyze how intestinal microbial diversity influences neuroinflammation and cognitive decline.', query: 'Gut microbiome role in Alzheimers disease progression' },
-    { title: 'AI in Oncology', icon: '🤖', tag: 'Oncology', desc: 'Review the efficacy of machine learning models in detecting occult metastases from imaging data.', query: 'Artificial Intelligence applications in metastatic breast cancer screening' },
-    { title: 'Precision Oncology', icon: '🎯', tag: 'Oncology', desc: 'Targeting specific genetic mutations in advanced Stage IV lung cancer therapies.', query: 'Precision medicine and genetic targeting in Stage IV lung cancer' },
-    { title: 'T-Cell Therapy', icon: '🛡️', tag: 'Immunology', desc: 'Evolution of CAR T-cell therapy in treating resistant B-cell lymphomas and leukemia.', query: 'CAR T-cell therapy efficacy in resistant B-cell lymphoma' },
-    { title: 'Microplastic Impact', icon: '🌊', tag: 'Environmental', desc: 'Biological consequences of microplastic accumulation in human vascular tissues.', query: 'Impact of microplastics on human cardiovascular system' },
-    { title: 'Sleep & Heart', icon: '💤', tag: 'Cardiology', desc: 'The role of circadian rhythms in regulating blood pressure and stroke risk factors.', query: 'Circadian rhythm disruption and hypertension risk' }
-];
+if (typeof SUGGESTED_QUERIES === 'undefined') {
+    var SUGGESTED_QUERIES = [
+        { title: 'Vaccine Heart Health', icon: '🫀', tag: 'Cardiology', desc: 'Investigate cardiac safety profiles and long-term studies of mRNA technologies.', query: 'Long-term effects of mRNA vaccines on heart health' },
+        { title: 'Sickle Cell CRISPR', icon: '🧬', tag: 'Genetics', desc: 'Explore cutting-edge gene therapy clinical trials and regulatory pathways for blood disorders.', query: 'CRISPR gene editing in sickle cell anemia treatments' },
+        { title: 'Gut-Brain Axis', icon: '🧠', tag: 'Neurology', desc: 'Analyze how intestinal microbial diversity influences neuroinflammation and cognitive decline.', query: 'Gut microbiome role in Alzheimers disease progression' },
+        { title: 'AI in Oncology', icon: '🤖', tag: 'Oncology', desc: 'Review the efficacy of machine learning models in detecting occult metastases from imaging data.', query: 'Artificial Intelligence applications in metastatic breast cancer screening' },
+        { title: 'Precision Oncology', icon: '🎯', tag: 'Oncology', desc: 'Targeting specific genetic mutations in advanced Stage IV lung cancer therapies.', query: 'Precision medicine and genetic targeting in Stage IV lung cancer' },
+        { title: 'T-Cell Therapy', icon: '🛡️', tag: 'Immunology', desc: 'Evolution of CAR T-cell therapy in treating resistant B-cell lymphomas and leukemia.', query: 'CAR T-cell therapy efficacy in resistant B-cell lymphoma' },
+        { title: 'Microplastic Impact', icon: '🌊', tag: 'Environmental', desc: 'Biological consequences of microplastic accumulation in human vascular tissues.', query: 'Impact of microplastics on human cardiovascular system' },
+        { title: 'Sleep & Heart', icon: '💤', tag: 'Cardiology', desc: 'The role of circadian rhythms in regulating blood pressure and stroke risk factors.', query: 'Circadian rhythm disruption and hypertension risk' }
+    ];
+}
 
 // Related search mappings
-const relatedSearches = {
-    'covid': ['COVID-19 symptoms', 'COVID-19 treatment', 'COVID-19 long term effects', 'mRNA vaccines'],
-    'vaccine': ['vaccine efficacy', 'vaccine side effects', 'mRNA technology', 'herd immunity'],
-    'cancer': ['cancer immunotherapy', 'chemotherapy', 'cancer prevention', 'oncology research'],
-    'diabetes': ['diabetes type 2', 'insulin resistance', 'diabetes management', 'glucose monitoring'],
-    'heart': ['cardiovascular disease', 'heart attack prevention', 'blood pressure', 'cholesterol']
-};
+if (typeof relatedSearches === 'undefined') {
+    var relatedSearches = {
+        'covid': ['COVID-19 symptoms', 'COVID-19 treatment', 'COVID-19 long term effects', 'mRNA vaccines'],
+        'vaccine': ['vaccine efficacy', 'vaccine side effects', 'mRNA technology', 'herd immunity'],
+        'cancer': ['cancer immunotherapy', 'chemotherapy', 'cancer prevention', 'oncology research'],
+        'diabetes': ['diabetes type 2', 'insulin resistance', 'diabetes management', 'glucose monitoring'],
+        'heart': ['cardiovascular disease', 'heart attack prevention', 'blood pressure', 'cholesterol']
+    };
+}
 
 // DOM Elements
-const headerSearchInput = document.getElementById('header-search-input');
-const clearSearchBtn = document.getElementById('clear-search-btn');
-const headerSearchBtn = document.getElementById('header-search-btn');
-const searchResults = document.getElementById('search-results');
-const resultsCount = document.getElementById('results-count');
-const statusDot = document.getElementById('status-dot');
-const statusText = document.getElementById('status-text');
+var headerSearchInput = document.getElementById('header-search-input');
+var clearSearchBtn = document.getElementById('clear-search-btn');
+var headerSearchBtn = document.getElementById('header-search-btn');
+var searchResults = document.getElementById('search-results');
+var resultsCount = document.getElementById('results-count');
+var statusDot = document.getElementById('status-dot');
+var statusText = document.getElementById('status-text');
 // Stat elements (using classes for multiple instances)
-const pubmedCountVals = document.querySelectorAll('.pubmed-count-val');
-const trialsCountVals = document.querySelectorAll('.trials-count-val');
-const totalDocsCountVals = document.querySelectorAll('.total-docs-count-val');
-const autocompleteDropdown = document.getElementById('autocomplete-dropdown');
-const historyItems = document.getElementById('history-items');
-const suggestionItems = document.getElementById('suggestion-items');
+var pubmedCountVals = document.querySelectorAll('.pubmed-count-val');
+var trialsCountVals = document.querySelectorAll('.trials-count-val');
+var totalDocsCountVals = document.querySelectorAll('.total-docs-count-val');
+var autocompleteDropdown = document.getElementById('autocomplete-dropdown');
+var historyItems = document.getElementById('history-items');
+var suggestionItems = document.getElementById('suggestion-items');
 
 // QA Elements
-const qaInput = document.getElementById('qa-input');
-const qaButton = document.getElementById('qa-button');
-const qaResults = document.getElementById('qa-results');
-const qaIndex = document.getElementById('qa-index');
-const maxAnswers = document.getElementById('max-answers');
+var qaInput = document.getElementById('qa-input');
+var qaButton = document.getElementById('qa-button');
+var qaResults = document.getElementById('qa-results');
+var qaIndex = document.getElementById('qa-index');
+var maxAnswers = document.getElementById('max-answers');
 
 // Filter Elements
-const filterChips = document.querySelectorAll('.filter-chip');
-const dateRadios = document.querySelectorAll('input[name="date-range"]');
-const customDateRange = document.getElementById('custom-date-range');
-const sortBySelect = document.getElementById('sort-by');
-const useRerankingCheckbox = document.getElementById('use-reranking');
-const highlightMatchesCheckbox = document.getElementById('highlight-matches');
-const alphaSlider = document.getElementById('alpha-slider');
-const alphaValue = document.getElementById('alpha-value');
-const languageFilter = document.getElementById('language-filter');
+var filterChips = document.querySelectorAll('.filter-chip');
+var dateRadios = document.querySelectorAll('input[name="date-range"]');
+var customDateRange = document.getElementById('custom-date-range');
+var sortBySelect = document.getElementById('sort-by');
+var useRerankingCheckbox = document.getElementById('use-reranking');
+var highlightMatchesCheckbox = document.getElementById('highlight-matches');
+var alphaSlider = document.getElementById('alpha-slider');
+var alphaValue = document.getElementById('alpha-value');
+var languageFilter = document.getElementById('language-filter');
 
 // Pagination Elements
-const pagination = document.getElementById('pagination');
-const prevPageBtn = document.getElementById('prev-page');
-const nextPageBtn = document.getElementById('next-page');
-const currentPageSpan = document.getElementById('current-page');
-const totalPagesSpan = document.getElementById('total-pages');
+var pagination = document.getElementById('pagination');
+var prevPageBtn = document.getElementById('prev-page');
+var nextPageBtn = document.getElementById('next-page');
+var currentPageSpan = document.getElementById('current-page');
+var totalPagesSpan = document.getElementById('total-pages');
 
 // ==========================================
 // INITIALIZATION
 // ==========================================
 async function init() {
-    console.log('BioSense AI: Initializing Application...');
+    console.log('BioMedScholar AI: Initializing Application...');
 
     // Initialize layout based on default tab
     switchTab('articles');
@@ -195,9 +209,9 @@ async function init() {
         checkHealth().catch(err => console.warn('Early health check failed:', err));
         loadStatistics().catch(err => console.warn('Early stats load failed:', err));
 
-        console.log('BioSense AI: Initialization Complete.');
+        console.log('BioMedScholar AI: Initialization Complete.');
     } catch (error) {
-        console.error('BioSense AI: Critical initialization error:', error);
+        console.error('BioMedScholar AI: Critical initialization error:', error);
         showToast('Application initialization issue. Some features may be limited.', 'error');
     }
 }
@@ -408,7 +422,6 @@ function initEventListeners() {
     // Autocomplete
     headerSearchInput?.addEventListener('input', () => {
         handleSearchInput();
-        toggleClearButton();
     });
     headerSearchInput?.addEventListener('focus', showAutocomplete);
     document.addEventListener('click', (e) => {
@@ -595,7 +608,7 @@ function initEventListeners() {
 }
 
 function initKeyboardShortcuts() {
-    console.log('BioSense AI: Keyboard shortcuts enabled.');
+    console.log('BioMedScholar AI: Keyboard shortcuts enabled.');
     document.addEventListener('keydown', (e) => {
         // Ignore if typing in input
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
@@ -649,6 +662,7 @@ function initKeyboardShortcuts() {
         if ((e.key.toLowerCase() === 'b') && !isMod) {
             toggleReadingList();
         }
+
 
         // N - Toggle Notifications
         if ((e.key.toLowerCase() === 'n') && !isMod) {
@@ -725,7 +739,7 @@ function initKeyboardShortcuts() {
                 modals.forEach(m => m.classList.remove('open'));
                 document.body.style.overflow = '';
             } else {
-                document.getElementById('notification-dropdown')?.classList.add('hidden');
+
                 document.getElementById('autocomplete-dropdown')?.classList.add('hidden');
                 closeArticleModal();
                 closeShortcutsModal();
@@ -1005,8 +1019,12 @@ function switchTab(tabName) {
     }
 }
 
-let trendsChart = null;
-let distributionChart = null;
+if (typeof trendsChart === 'undefined') {
+    var trendsChart = null;
+}
+if (typeof distributionChart === 'undefined') {
+    var distributionChart = null;
+}
 
 function updateTrendsDashboard() {
     const ctxTrend = document.getElementById('trendsChart');
@@ -1237,7 +1255,9 @@ function filterResultsList() {
 /**
  * Toggles all abstracts open/closed (conceptually: in detailed view)
  */
-let allAbstractsExpanded = false;
+if (typeof allAbstractsExpanded === 'undefined') {
+    var allAbstractsExpanded = false;
+}
 function toggleAllAbstracts() {
     allAbstractsExpanded = !allAbstractsExpanded;
     const btn = document.getElementById('expand-all-btn');
@@ -1328,7 +1348,7 @@ function toggleHistoryDropdown() {
     const isHidden = dropdown.classList.contains('hidden');
 
     // Close other dropdowns
-    document.getElementById('notification-dropdown')?.classList.add('hidden');
+
 
     if (isHidden) {
         renderHistoryDropdown();
@@ -1505,8 +1525,8 @@ async function loadStatistics() {
         });
         const data = await response.json();
 
-        const pubmedDocs = data.pubmed_articles?.document_count || 0;
-        const trialsDocs = data.clinical_trials?.document_count || 0;
+        const pubmedDocs = data.pubmed_articles?.document_count || 17106;
+        const trialsDocs = data.clinical_trials?.document_count || 7726;
         const totalDocs = pubmedDocs + trialsDocs;
 
         const pubmedText = pubmedDocs.toLocaleString();
@@ -1529,10 +1549,10 @@ async function loadStatistics() {
         });
     } catch (error) {
         console.error('Failed to load statistics:', error);
-        const allStats = [...pubmedCountVals, ...trialsCountVals, ...totalDocsCountVals];
-        allStats.forEach(el => {
-            el.textContent = '---';
-        });
+        // Fallback to specific counts requested by user
+        pubmedCountVals.forEach(el => el.textContent = '17,106');
+        trialsCountVals.forEach(el => el.textContent = '7,726');
+        totalDocsCountVals.forEach(el => el.textContent = '24,832');
     }
 }
 
@@ -1577,6 +1597,11 @@ async function performSearch() {
     // Save to history
     saveSearchHistory(query);
 
+    // Check for achievements
+    if (typeof checkAchievementsStatus === 'function') {
+        checkAchievementsStatus();
+    }
+
     if (headerSearchBtn) {
         headerSearchBtn.disabled = true;
         headerSearchBtn.classList.add('loading');
@@ -1587,9 +1612,13 @@ async function performSearch() {
     // Show skeleton, hide actual results
     const skeleton = document.getElementById('skeleton-loader');
     const searchLoader = document.getElementById('search-loader');
+    const stopBtn = document.getElementById('stop-search-btn');
+    const clearBtn = document.getElementById('clear-search-btn');
 
     if (skeleton) skeleton.classList.remove('hidden');
     if (searchLoader) searchLoader.classList.remove('hidden');
+    if (stopBtn) stopBtn.classList.remove('hidden');
+    if (clearBtn) clearBtn.classList.add('hidden');
 
     const searchResults = document.getElementById('search-results');
     const quickFilters = document.getElementById('quick-filters');
@@ -1601,16 +1630,29 @@ async function performSearch() {
     }
     if (quickFilters) quickFilters.classList.add('hidden');
 
+    // Setup AbortController
+    if (currentSearchAbortController) currentSearchAbortController.abort();
+    currentSearchAbortController = new AbortController();
+
     try {
         let index = 'both';
         if (currentFilters.source === 'pubmed') index = 'pubmed';
         else if (currentFilters.source === 'clinical_trials') index = 'clinical_trials';
+        else if (currentFilters.source === 'google') index = 'google';
 
         let dateFrom = null;
         let dateTo = null;
+        const currentYear = new Date().getFullYear();
+
         if (currentFilters.dateRange === 'custom') {
             dateFrom = currentFilters.dateFrom;
             dateTo = currentFilters.dateTo;
+        } else if (currentFilters.dateRange === '3y') {
+            dateFrom = currentYear - 3;
+        } else if (currentFilters.dateRange === '5y') {
+            dateFrom = currentYear - 5;
+        } else if (currentFilters.dateRange === '10y') {
+            dateFrom = currentYear - 10;
         } else if (currentFilters.dateRange !== 'any') {
             dateFrom = parseInt(currentFilters.dateRange);
         }
@@ -1620,20 +1662,25 @@ async function performSearch() {
             headers: {
                 'Content-Type': 'application/json'
             },
+            signal: currentSearchAbortController.signal,
             body: JSON.stringify({
                 query: query,
                 index: index,
                 max_results: 100,
                 alpha: currentFilters.alpha / 100,
-                use_reranking: currentFilters.useReranking,
+                use_reranking: currentFilters.use_reranking,
                 sort_by: currentFilters.sortBy,
                 date_from: dateFrom,
-                date_to: dateTo
+                date_to: dateTo,
+                article_types: currentFilters.articleTypes,
+                subject: currentFilters.subject,
+                availability: currentFilters.availability
             })
         });
 
         if (!response.ok) {
-            throw new Error(`Server returned server error: ${response.status}`);
+            const errText = await response.text();
+            throw new Error(`Server returned error: ${response.status} - ${errText}`);
         }
 
         const data = await response.json();
@@ -1642,20 +1689,48 @@ async function performSearch() {
         showRelatedSearches(query);
 
     } catch (error) {
+        if (error.name === 'AbortError') {
+            console.log('Search aborted by user');
+            showToast('Search cancelled', 'info');
+            return;
+        }
         if (searchResults) {
             searchResults.classList.remove('hidden');
             searchResults.innerHTML = showError(`Search failed: ${error.message}. Please try again.`);
         }
         console.error('Search failed:', error);
     } finally {
-        if (headerSearchBtn) headerSearchBtn.disabled = false;
+        currentSearchAbortController = null;
+        if (headerSearchBtn) {
+            headerSearchBtn.disabled = false;
+            headerSearchBtn.classList.remove('loading');
+        }
         // Hide skeleton and loader
         const skeleton = document.getElementById('skeleton-loader');
         const searchLoader = document.getElementById('search-loader');
+        const stopBtn = document.getElementById('stop-search-btn');
+        const clearBtn = document.getElementById('clear-search-btn');
+
         if (skeleton) skeleton.classList.add('hidden');
         if (searchLoader) searchLoader.classList.add('hidden');
+        if (stopBtn) stopBtn.classList.add('hidden');
+
+        // Show clear button if there's text
+        if (clearBtn && headerSearchInput && headerSearchInput.value) {
+            clearBtn.classList.remove('hidden');
+        }
 
         if (searchResults) searchResults.classList.remove('hidden');
+    }
+}
+
+/**
+ * Stop searching
+ */
+function stopSearching() {
+    if (currentSearchAbortController) {
+        currentSearchAbortController.abort();
+        currentSearchAbortController = null;
     }
 }
 
@@ -1664,7 +1739,6 @@ function clearSearchInput() {
         headerSearchInput.value = '';
         headerSearchInput.focus();
         handleSearchInput();
-        toggleClearButton();
 
         // Show welcome state if query is empty
         const welcomeState = document.querySelector('.welcome-state');
@@ -1677,6 +1751,11 @@ function clearSearchInput() {
             pagination.classList.add('hidden');
         }
     }
+}
+
+function toggleClearButton() {
+    // Redundant as handleSearchInput already manages .hidden class
+    // but kept as a no-op to prevent ReferenceErrors if called elsewhere
 }
 
 function clearAllQuickFilters() {
@@ -1718,6 +1797,12 @@ function toggleQuickFilter(type, value) {
         } else {
             currentFilters.articleTypes = [value];
         }
+    } else if (type === 'sortBy') {
+        currentFilters.sortBy = value;
+    } else if (type === 'subject') {
+        currentFilters.subject = (currentFilters.subject === value) ? 'all' : value;
+    } else if (type === 'availability') {
+        currentFilters.availability = (currentFilters.availability === value) ? 'all' : value;
     }
 
     // Update Sidebar UI to match
@@ -1754,6 +1839,12 @@ function updateSidebarUI() {
         } else if (onclick.includes("'articleTypes'") &&
             currentFilters.articleTypes.length === 1 &&
             onclick.includes(`'${currentFilters.articleTypes[0]}'`)) {
+            isActive = true;
+        } else if (onclick.includes("'sortBy'") && onclick.includes(`'${currentFilters.sortBy}'`)) {
+            isActive = true;
+        } else if (onclick.includes("'subject'") && onclick.includes(`'${currentFilters.subject}'`)) {
+            isActive = true;
+        } else if (onclick.includes("'availability'") && onclick.includes(`'${currentFilters.availability}'`)) {
             isActive = true;
         }
 
@@ -1796,17 +1887,15 @@ function displayCurrentResults() {
 
     if (resultsCount) {
         const pubmedResults = results.filter(r => r.source === 'pubmed').length;
-        const trialsResults = results.length - pubmedResults;
+        const googleResults = results.filter(r => r.source === 'google').length;
+        const trialsResults = results.length - pubmedResults - googleResults;
 
-        let subCountText = '';
-        if (pubmedResults > 0 && trialsResults > 0) {
-            subCountText = ` (&nbsp;${pubmedResults.toLocaleString()} PubMed, ${trialsResults.toLocaleString()} Trials&nbsp;)`;
-        } else if (pubmedResults > 0) {
-            subCountText = ` (&nbsp;${pubmedResults.toLocaleString()} PubMed&nbsp;)`;
-        } else if (trialsResults > 0) {
-            subCountText = ` (&nbsp;${trialsResults.toLocaleString()} Trials&nbsp;)`;
-        }
+        let parts = [];
+        if (pubmedResults > 0) parts.push(`${pubmedResults.toLocaleString()} PubMed`);
+        if (trialsResults > 0) parts.push(`${trialsResults.toLocaleString()} Trials`);
+        if (googleResults > 0) parts.push(`${googleResults.toLocaleString()} Web`);
 
+        const subCountText = parts.length > 0 ? ` (&nbsp;${parts.join(', ')}&nbsp;)` : '';
         resultsCount.innerHTML = `About <strong>${results.length.toLocaleString()}</strong> results${subCountText}`;
     }
 
@@ -1822,7 +1911,8 @@ function displayCurrentResults() {
         }
 
         // Ensure space for floating quick filters
-        searchResults.style.paddingBottom = '80px';
+        // No longer needed for sidebar
+        // searchResults.style.paddingBottom = '80px';
     }
 
     // Show quick filters
@@ -2038,8 +2128,9 @@ function showRelatedSearches(query) {
 
 function createResultCard(result) {
     const isPubMed = result.source === 'pubmed';
-    const sourceLabel = isPubMed ? 'PubMed' : 'Clinical Trial';
-    const sourceClass = isPubMed ? 'pubmed' : 'clinical-trial';
+    const isGoogle = result.source === 'google';
+    const sourceLabel = isGoogle ? 'Web Search' : (isPubMed ? 'PubMed' : 'Clinical Trial');
+    const sourceClass = isGoogle ? 'google' : (isPubMed ? 'pubmed' : 'clinical-trial');
     const externalUrl = getExternalUrl(result);
     const isBookmarked = readingList.some(item => item.id === result.id);
     const resultDataB64 = btoa(unescape(encodeURIComponent(JSON.stringify(result))));
@@ -2279,12 +2370,12 @@ function toggleBookmark(b64Data, button) {
             showToast('Added to reading list', 'success');
 
             // Add notification
-            addNotification({
-                title: 'Article Saved',
-                body: `"${truncate(result.title, 40)}" has been added to your collection.`,
-                type: 'save',
-                data: b64Data
+            addNotification('success', 'Article Saved', `"${truncate(result.title, 40)}" has been added to your collection.`, {
+                category: 'articles',
+                priority: 'low'
             });
+
+
         }
 
         localStorage.setItem('readingList', JSON.stringify(readingList));
@@ -2301,12 +2392,34 @@ function updateReadingListCount() {
         countEl.textContent = readingList.length;
         countEl.setAttribute('data-count', readingList.length);
     }
+    // Check for achievements
+    if (typeof checkAchievementsStatus === 'function') {
+        checkAchievementsStatus();
+    }
 }
 
 function toggleReadingList() {
     const panel = document.getElementById('reading-list-panel');
     panel?.classList.toggle('open');
     renderReadingList();
+}
+
+
+/**
+ * Toggles the visibility of the research filters sidebar.
+ */
+function toggleSidebar() {
+    const sidebar = document.getElementById('quick-filters');
+    const showBtn = document.getElementById('show-sidebar-btn');
+
+    if (sidebar && showBtn) {
+        sidebar.classList.toggle('hidden');
+        showBtn.classList.toggle('hidden');
+
+        // Save preference if needed
+        const isHidden = sidebar.classList.contains('hidden');
+        localStorage.setItem('sidebarHidden', isHidden);
+    }
 }
 
 function renderReadingList() {
@@ -3156,7 +3269,9 @@ function showHelpModal() {
     if (modal) {
         modal.classList.add('open');
         document.body.style.overflow = 'hidden';
-        initHelpTabs();
+        // Reset to first tab when opening
+        const firstTab = modal.querySelector('.help-tab[data-section="getting-started"]');
+        if (firstTab) switchHelpTab('getting-started', firstTab);
     }
 }
 
@@ -3168,19 +3283,26 @@ function closeHelpModal() {
     }
 }
 
-function initHelpTabs() {
-    document.querySelectorAll('.help-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            // Update tab buttons
-            document.querySelectorAll('.help-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
+function switchHelpTab(sectionName, btn) {
+    if (!sectionName || !btn) return;
 
-            // Update sections
-            const sectionId = `help-${tab.dataset.section}`;
-            document.querySelectorAll('.help-section').forEach(s => s.classList.remove('active'));
-            document.getElementById(sectionId)?.classList.add('active');
-        });
-    });
+    // Update tab buttons
+    document.querySelectorAll('.help-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Update sections
+    const sectionId = `help-${sectionName}`;
+    document.querySelectorAll('.help-section').forEach(s => s.classList.remove('active'));
+
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+        targetSection.classList.add('active');
+        // Scroll help content to top when switching tabs
+        const modalBody = document.querySelector('.help-modal .modal-body');
+        if (modalBody) modalBody.scrollTop = 0;
+    } else {
+        console.warn(`BioMedScholar AI: Help section not found: ${sectionId}`);
+    }
 }
 
 // ==========================================
@@ -3269,7 +3391,9 @@ function applyAdvancedSearch() {
 }
 
 // Authentication Functions
-let isRegisterMode = false;
+if (typeof isRegisterMode === 'undefined') {
+    var isRegisterMode = false;
+}
 
 function openLoginModal() {
     const modal = document.getElementById('login-modal');
@@ -3420,165 +3544,11 @@ if (typeof firebase !== 'undefined' && auth) {
     });
 }
 
-// Notification System Logic
-let notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-
-// Default notifications if list is empty
-if (notifications.length === 0) {
-    notifications = [
-        {
-            id: 1,
-            title: 'New Feature: AI Chat',
-            body: 'You can now ask questions about specific papers using our new AI Chat feature!',
-            time: 'Just now',
-            read: false,
-            type: 'feature'
-        },
-        {
-            id: 2,
-            title: 'Welcome to BioMed Scholar',
-            body: 'Thanks for joining our beta program. We indexed over 1,800 new articles today.',
-            time: 'Recently',
-            read: false,
-            type: 'info'
-        }
-    ];
-}
-
-function saveNotifications() {
-    localStorage.setItem('notifications', JSON.stringify(notifications));
-}
-
-function addNotification(notif) {
-    const newNotif = {
-        id: Date.now(),
-        read: false,
-        time: 'Just now',
-        ...notif
-    };
-    notifications.unshift(newNotif);
-    // Keep only last 20 notifications
-    if (notifications.length > 20) notifications.pop();
-    saveNotifications();
-    updateNotificationUI();
-}
-
-function toggleNotifications() {
-    const dropdown = document.getElementById('notification-dropdown');
-    dropdown?.classList.toggle('hidden');
-    if (dropdown && !dropdown.classList.contains('hidden')) {
-        updateNotificationUI();
-    }
-}
-
-function updateNotificationUI() {
-    const list = document.getElementById('notification-list');
-    const countBadge = document.getElementById('notification-count');
-
-    if (!list || !countBadge) return;
-
-    const unreadCount = notifications.filter(n => !n.read).length;
-
-    if (unreadCount > 0) {
-        countBadge.textContent = unreadCount;
-        countBadge.classList.remove('hidden');
-    } else {
-        countBadge.classList.add('hidden');
-    }
-
-    if (notifications.length === 0) {
-        list.innerHTML = `
-            <div class="empty-state">
-                <p>No new notifications</p>
-            </div>
-        `;
-        return;
-    }
-
-    list.innerHTML = notifications.map(n => `
-        <div class="notification-item ${n.read ? '' : 'unread'}" onclick="handleNotificationClick(${n.id}, '${n.type}')">
-            <div class="notif-icon">
-                ${getNotificationIcon(n.type)}
-            </div>
-            <div class="notif-content">
-                <div class="notif-title">${n.title}</div>
-                <div class="notif-body">${n.body}</div>
-                <div class="notif-time">${n.time}</div>
-            </div>
-        </div>
-    `).join('');
-}
-
-function getNotificationIcon(type) {
-    if (type === 'feature') {
-        return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-        </svg>`;
-    }
-    if (type === 'save') {
-        return `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
-            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-        </svg>`;
-    }
-    return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="16" x2="12" y2="12"/>
-        <line x1="12" y1="8" x2="12.01" y2="8"/>
-    </svg>`;
-}
-
-function markAllNotificationsRead() {
-    notifications.forEach(n => n.read = true);
-    saveNotifications();
-    updateNotificationUI();
-}
-
-function markNotificationRead(id) {
-    const notif = notifications.find(n => n.id === id);
-    if (notif) {
-        notif.read = true;
-        saveNotifications();
-        updateNotificationUI();
-    }
-}
-
-function handleNotificationClick(id, type) {
-    const notif = notifications.find(n => n.id === id);
-    markNotificationRead(id);
-
-    const dropdown = document.getElementById('notification-dropdown');
-    dropdown?.classList.add('hidden');
-
-    if (type === 'feature') {
-        switchTab('qa');
-        setTimeout(() => {
-            const input = document.getElementById('qa-input');
-            input?.focus();
-        }, 100);
-    } else if (type === 'save' && notif && notif.data) {
-        openDocumentModalFromB64(notif.data);
-    }
-}
-
-// Close Dropdown on Click Outside
-document.addEventListener('click', (e) => {
-    const dropdown = document.getElementById('notification-dropdown');
-    const btn = document.querySelector('.notification-btn');
-
-    // Close Notification Dropdown
-    if (dropdown && !dropdown.classList.contains('hidden')) {
-        if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
-            dropdown.classList.add('hidden');
-        }
-    }
-});
-
-// Initialize Notifications and Health Check on Load
-// Redundant initialization handled by init()
-
 
 // Selection & Local Filtering
-let selectedArticles = new Set();
+if (typeof selectedArticles === 'undefined') {
+    var selectedArticles = new Set();
+}
 
 function toggleArticleSelection(id, element) {
     if (selectedArticles.has(id)) {
@@ -3809,7 +3779,8 @@ function initDraggableFilters() {
 }
 
 // Initial call
-initDraggableFilters();
+// Draggable initialization disabled for sidebar mode
+// initDraggableFilters();
 
 function setSearchQuery(query) {
     if (headerSearchInput) {
@@ -3855,3 +3826,1122 @@ function renderSuggestedQueries() {
         });
     }
 }
+
+// ==========================================
+// CITATION FUNCTIONS
+// ==========================================
+
+/**
+ * Open citation modal for an article
+ */
+function openCitationModal(articleData) {
+    // articleData can be a base64 encoded JSON or an article object
+    let article;
+
+    if (typeof articleData === 'string') {
+        try {
+            article = JSON.parse(decodeURIComponent(escape(atob(articleData))));
+        } catch (e) {
+            console.error('Failed to parse article data:', e);
+            showToast('Failed to load article data', 'error');
+            return;
+        }
+    } else {
+        article = articleData;
+    }
+
+    currentCitationArticle = article;
+    currentCitationFormat = 'apa';
+
+    const modal = document.getElementById('citation-modal');
+    if (modal) {
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        updateCitationText();
+    }
+}
+
+/**
+ * Close citation modal
+ */
+function closeCitationModal() {
+    const modal = document.getElementById('citation-modal');
+    if (modal) {
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+}
+
+/**
+ * Switch citation format
+ */
+function switchCitationFormat(format) {
+    currentCitationFormat = format;
+
+    // Update active tab
+    document.querySelectorAll('.citation-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.format === format) {
+            tab.classList.add('active');
+        }
+    });
+
+    updateCitationText();
+}
+
+/**
+ * Update citation text based on current format
+ */
+function updateCitationText() {
+    if (!currentCitationArticle) return;
+
+    const citationTextEl = document.getElementById('citation-text');
+    if (!citationTextEl) return;
+
+    let citation = '';
+
+    switch (currentCitationFormat) {
+        case 'apa':
+            citation = generateAPACitation(currentCitationArticle);
+            break;
+        case 'mla':
+            citation = generateMLACitation(currentCitationArticle);
+            break;
+        case 'chicago':
+            citation = generateChicagoCitation(currentCitationArticle);
+            break;
+        case 'bibtex':
+            citation = generateBibTeXCitation(currentCitationArticle);
+            break;
+    }
+
+    citationTextEl.textContent = citation;
+}
+
+/**
+ * Generate APA format citation
+ */
+function generateAPACitation(article) {
+    const authors = ensureAuthorsArray(article.metadata?.authors);
+    const year = extractYear(article.metadata?.publication_date);
+    const title = article.title || 'Untitled';
+    const journal = article.metadata?.journal || 'Unknown Journal';
+
+    let authorStr = 'Multiple Authors';
+    if (authors.length > 0) {
+        if (authors.length === 1) {
+            authorStr = authors[0];
+        } else if (authors.length === 2) {
+            authorStr = `${authors[0]} & ${authors[1]}`;
+        } else {
+            authorStr = `${authors[0]} et al.`;
+        }
+    }
+
+    return `${authorStr}. (${year}). ${title}. ${journal}.`;
+}
+
+/**
+ * Generate MLA format citation
+ */
+function generateMLACitation(article) {
+    const authors = ensureAuthorsArray(article.metadata?.authors);
+    const year = extractYear(article.metadata?.publication_date);
+    const title = article.title || 'Untitled';
+    const journal = article.metadata?.journal || 'Unknown Journal';
+
+    let authorStr = 'Multiple Authors';
+    if (authors.length > 0) {
+        if (authors.length === 1) {
+            authorStr = authors[0];
+        } else if (authors.length === 2) {
+            authorStr = `${authors[0]}, and ${authors[1]}`;
+        } else {
+            authorStr = `${authors[0]}, et al.`;
+        }
+    }
+
+    return `${authorStr}. "${title}." ${journal}, ${year}.`;
+}
+
+/**
+ * Generate Chicago format citation
+ */
+function generateChicagoCitation(article) {
+    const authors = ensureAuthorsArray(article.metadata?.authors);
+    const year = extractYear(article.metadata?.publication_date);
+    const title = article.title || 'Untitled';
+    const journal = article.metadata?.journal || 'Unknown Journal';
+
+    let authorStr = 'Multiple Authors';
+    if (authors.length > 0) {
+        if (authors.length === 1) {
+            authorStr = authors[0];
+        } else if (authors.length === 2) {
+            authorStr = `${authors[0]} and ${authors[1]}`;
+        } else {
+            authorStr = `${authors[0]} et al.`;
+        }
+    }
+
+    return `${authorStr}. "${title}." ${journal} (${year}).`;
+}
+
+/**
+ * Generate BibTeX format citation
+ */
+function generateBibTeXCitation(article) {
+    const authors = ensureAuthorsArray(article.metadata?.authors);
+    const year = extractYear(article.metadata?.publication_date);
+    const title = article.title || 'Untitled';
+    const journal = article.metadata?.journal || 'Unknown Journal';
+    const pmid = article.metadata?.pmid || article.id || 'unknown';
+
+    const authorStr = authors.length > 0 ? authors.join(' and ') : 'Unknown';
+    const citeKey = `${authors[0]?.split(' ').pop() || 'article'}${year}`;
+
+    return `@article{${citeKey},
+  author = {${authorStr}},
+  title = {${title}},
+  journal = {${journal}},
+  year = {${year}},
+  pmid = {${pmid}}
+}`;
+}
+
+/**
+ * Extract year from publication date
+ */
+function extractYear(dateStr) {
+    if (!dateStr) return 'n.d.';
+    const match = dateStr.match(/\d{4}/);
+    return match ? match[0] : 'n.d.';
+}
+
+/**
+ * Copy citation to clipboard
+ */
+function copyCitation() {
+    const citationText = document.getElementById('citation-text');
+    if (!citationText) return;
+
+    const text = citationText.textContent;
+
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Citation copied to clipboard!', 'success');
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        showToast('Failed to copy citation', 'error');
+    });
+}
+
+// ==========================================
+// HELP & SHORTCUTS MODAL FUNCTIONS
+// ==========================================
+
+/**
+ * Show help modal
+ */
+function showHelpModal() {
+    const modal = document.getElementById('help-modal');
+    if (modal) {
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+/**
+ * Close help modal
+ */
+function closeHelpModal() {
+    const modal = document.getElementById('help-modal');
+    if (modal) {
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+}
+
+/**
+ * Show keyboard shortcuts modal
+ */
+function showKeyboardShortcuts() {
+    const modal = document.getElementById('shortcuts-modal');
+    if (modal) {
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+/**
+ * Close keyboard shortcuts modal
+ */
+function closeShortcutsModal() {
+    const modal = document.getElementById('shortcuts-modal');
+    if (modal) {
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+}
+
+// ==========================================
+// KEYBOARD SHORTCUTS HANDLER
+// ==========================================
+
+document.addEventListener('keydown', function (e) {
+    // Don't trigger shortcuts when typing in input fields
+    const isInputFocused = document.activeElement.tagName === 'INPUT' ||
+        document.activeElement.tagName === 'TEXTAREA' ||
+        document.activeElement.isContentEditable;
+
+    // Ctrl+K: Focus search bar (works even in input fields)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const searchInput = document.getElementById('header-search-input');
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+        }
+        return;
+    }
+
+    // Ctrl+Shift+F: Open advanced search
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+        e.preventDefault();
+        openAdvancedSearch();
+        return;
+    }
+
+    // Escape: Close modals or clear search
+    if (e.key === 'Escape') {
+        // Close any open modals
+        const openModals = document.querySelectorAll('.modal.open');
+        if (openModals.length > 0) {
+            openModals.forEach(modal => {
+                modal.classList.remove('open');
+            });
+            document.body.style.overflow = '';
+            return;
+        }
+
+        // Clear search if focused
+        if (isInputFocused && document.activeElement.id === 'header-search-input') {
+            clearSearchInput();
+        }
+        return;
+    }
+
+    // Don't trigger other shortcuts when typing
+    if (isInputFocused) return;
+
+    // Number keys: Switch tabs
+    if (e.key === '1') {
+        e.preventDefault();
+        switchTab('articles');
+    } else if (e.key === '2') {
+        e.preventDefault();
+        switchTab('qa');
+    } else if (e.key === '3') {
+        e.preventDefault();
+        switchTab('trends');
+    }
+
+    // Arrow keys: Navigate pages
+    else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const prevBtn = document.getElementById('prev-page');
+        if (prevBtn && !prevBtn.disabled) {
+            prevBtn.click();
+        }
+    } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const nextBtn = document.getElementById('next-page');
+        if (nextBtn && !nextBtn.disabled) {
+            nextBtn.click();
+        }
+    }
+
+    // B: Toggle reading list
+    else if (e.key === 'b' || e.key === 'B') {
+        e.preventDefault();
+        toggleReadingList();
+    }
+
+    // D: Toggle dark mode
+    else if (e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        toggleTheme();
+    }
+
+    // Z: Toggle Zen mode
+    else if (e.key === 'z' || e.key === 'Z') {
+        e.preventDefault();
+        toggleZenMode();
+    }
+
+    // E: Export results
+    else if (e.key === 'e' || e.key === 'E') {
+        e.preventDefault();
+        if (currentResults.length > 0) {
+            exportResults('csv');
+        } else {
+            showToast('No results to export', 'info');
+        }
+    }
+
+    // ?: Show keyboard shortcuts
+    else if (e.key === '?') {
+        e.preventDefault();
+        showKeyboardShortcuts();
+    }
+
+    // H: Show help
+    else if (e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
+        showHelpModal();
+    }
+});
+
+/**
+ * Switch to a specific tab
+ */
+function switchTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.tab === tabName) {
+            tab.classList.add('active');
+        }
+    });
+
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+
+    const targetTab = document.getElementById(`${tabName}-tab`);
+    if (targetTab) {
+        targetTab.classList.add('active');
+    }
+}
+
+console.log('✅ Keyboard shortcuts enabled');
+console.log('Press ? to view all shortcuts');
+
+// ==========================================
+// ADVANCED NOTIFICATION SYSTEM
+// ==========================================
+
+// Notification state
+if (typeof notifications === 'undefined') {
+    var notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+}
+if (typeof unreadCount === 'undefined') {
+    var unreadCount = 0;
+}
+if (typeof currentNotifFilter === 'undefined') {
+    var currentNotifFilter = 'all';
+}
+
+// Default notification preferences
+if (typeof notificationPreferences === 'undefined') {
+    var notificationPreferences = JSON.parse(localStorage.getItem('notificationPreferences') || JSON.stringify({
+        enabled: true,
+        sound: true,
+        browserNotifications: false,
+        categories: {
+            articles: true,
+            searches: true,
+            updates: true,
+            achievements: true,
+            exports: true,
+            errors: true
+        },
+        priority: {
+            low: true,
+            medium: true,
+            high: true,
+            urgent: true
+        }
+    }));
+}
+
+/**
+ * Simple wrapper for updating all notification UI components
+ */
+function updateNotificationUI() {
+    updateNotificationBadge();
+    updateNotificationList();
+    syncSettingsUI();
+}
+
+/**
+ * Initialize notification system
+ */
+function initNotifications() {
+    updateNotificationBadge();
+    updateNotificationList();
+    syncSettingsUI();
+
+    // Check for browser notification permission
+    if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+            notificationPreferences.browserNotifications = true;
+        } else {
+            notificationPreferences.browserNotifications = false;
+        }
+    }
+
+    // Check for scheduled notifications
+    checkScheduledNotifications();
+
+    // Check for achievements
+    checkAchievementsStatus();
+}
+
+/**
+ * Add a new notification with advanced options
+ */
+function addNotification(type, title, message, options = {}) {
+    const {
+        data = {},
+        priority = 'medium', // 'low', 'medium', 'high', 'urgent'
+        category = 'info', // 'articles', 'searches', 'exports', 'errors', 'updates', 'achievements'
+        actions = [], // Array of {label, callback}
+        autoClose = false,
+        autoCloseDelay = 5000,
+        sound = true,
+        persistent = false
+    } = options;
+
+    // Check if this category is enabled
+    if (!notificationPreferences.enabled || !notificationPreferences.categories[category]) {
+        return null;
+    }
+
+    // Check if this priority level is enabled
+    if (!notificationPreferences.priority[priority]) {
+        return null;
+    }
+
+    const notification = {
+        id: Date.now() + Math.random().toString(36).substr(2, 9),
+        type: type,
+        title: title,
+        message: message,
+        data: data,
+        priority: priority,
+        category: category,
+        actions: actions,
+        timestamp: new Date().toISOString(),
+        read: false,
+        persistent: persistent,
+        autoClose: autoClose,
+        autoCloseDelay: autoCloseDelay
+    };
+
+    notifications.unshift(notification);
+
+    // Keep only last 100 notifications
+    if (notifications.length > 100) {
+        notifications = notifications.slice(0, 100);
+    }
+
+    saveNotifications();
+    updateNotificationBadge();
+    updateNotificationList();
+
+    // Show specialized toast if enabled
+    if (notificationPreferences.enabled) {
+        showAdvancedToast(notification);
+    }
+
+    // Play sound if enabled
+    if (sound && notificationPreferences.sound) {
+        playNotificationSound(priority);
+    }
+
+    // Show browser notification if permitted
+    if (notificationPreferences.browserNotifications) {
+        showBrowserNotification(title, message, type, actions);
+    }
+
+    // Auto-close if specified
+    if (autoClose) {
+        setTimeout(() => {
+            dismissNotification(notification.id);
+        }, autoCloseDelay);
+    }
+
+    return notification.id;
+}
+
+/**
+ * Advanced Toast that supports titles and icons
+ */
+function showAdvancedToast(notification) {
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${notification.type}`;
+
+    const icon = getNotificationIcon(notification.type);
+
+    toast.innerHTML = `
+        <div class="toast-icon">${icon}</div>
+        <div class="toast-content">
+            <div class="toast-title" style="font-weight: 700; font-size: 13px;">${escapeHtml(notification.title)}</div>
+            <div class="toast-message" style="font-size: 12px; opacity: 0.9;">${escapeHtml(notification.message)}</div>
+        </div>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s ease forwards';
+        setTimeout(() => {
+            toast.remove();
+            if (container.children.length === 0) container.remove();
+        }, 300);
+    }, 5000);
+}
+
+/**
+ * Add scheduled notification
+ */
+function scheduleNotification(type, title, message, scheduledTime, options = {}) {
+    const scheduledNotifications = JSON.parse(localStorage.getItem('scheduledNotifications') || '[]');
+
+    const scheduled = {
+        id: Date.now() + Math.random().toString(36).substr(2, 9),
+        type: type,
+        title: title,
+        message: message,
+        scheduledTime: scheduledTime,
+        options: options,
+        delivered: false
+    };
+
+    scheduledNotifications.push(scheduled);
+    localStorage.setItem('scheduledNotifications', JSON.stringify(scheduledNotifications));
+
+    showToast(`Notification scheduled for ${new Date(scheduledTime).toLocaleString()}`, 'info');
+}
+
+/**
+ * Check and deliver scheduled notifications
+ */
+function checkScheduledNotifications() {
+    const scheduledNotifications = JSON.parse(localStorage.getItem('scheduledNotifications') || '[]');
+    const now = Date.now();
+
+    scheduledNotifications.forEach(scheduled => {
+        if (!scheduled.delivered && new Date(scheduled.scheduledTime).getTime() <= now) {
+            addNotification(scheduled.type, scheduled.title, scheduled.message, scheduled.options);
+            scheduled.delivered = true;
+        }
+    });
+
+    // Remove delivered notifications older than 24 hours
+    const filtered = scheduledNotifications.filter(s =>
+        !s.delivered || (now - new Date(s.scheduledTime).getTime() < 86400000)
+    );
+
+    localStorage.setItem('scheduledNotifications', JSON.stringify(filtered));
+
+    // Check again in 1 minute
+    setTimeout(checkScheduledNotifications, 60000);
+}
+
+/**
+ * Play notification sound based on priority
+ */
+function playNotificationSound(priority) {
+    // Only play sound if user interacted with page
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioContext.state === 'suspended') return;
+
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        // Different frequencies for different priorities
+        const frequencies = {
+            low: 400,
+            medium: 600,
+            high: 800,
+            urgent: 1000
+        };
+
+        oscillator.frequency.value = frequencies[priority] || 600;
+        oscillator.type = 'sine';
+
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (e) {
+        console.warn('Could not play notification sound:', e);
+    }
+}
+
+/**
+ * Show browser notification with actions
+ */
+function showBrowserNotification(title, message, type, actions = []) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+        const icon = getNotificationIcon(type);
+        const notif = new Notification(title, {
+            body: message,
+            icon: icon,
+            badge: '/icons/icon-192x192.png',
+            tag: 'biomedscholar-notification',
+            requireInteraction: actions.length > 0,
+            actions: actions.slice(0, 2).map(a => ({
+                action: a.label.toLowerCase().replace(/\s+/g, '-'),
+                title: a.label
+            }))
+        });
+
+        notif.onclick = () => {
+            window.focus();
+            notif.close();
+        };
+    }
+}
+
+/**
+ * Get icon for notification type
+ */
+function getNotificationIcon(type) {
+    const icons = {
+        'success': '✅',
+        'error': '❌',
+        'warning': '⚠️',
+        'info': 'ℹ️',
+        'article': '📄',
+        'update': '🔔',
+        'achievement': '🏆',
+        'search': '🔍',
+        'export': '📊'
+    };
+    return icons[type] || 'ℹ️';
+}
+
+/**
+ * Get priority badge
+ */
+function getPriorityBadge(priority) {
+    const badges = {
+        low: '<span class="priority-badge priority-low">Low</span>',
+        medium: '<span class="priority-badge priority-medium">Medium</span>',
+        high: '<span class="priority-badge priority-high">High</span>',
+        urgent: '<span class="priority-badge priority-urgent">Urgent</span>'
+    };
+    return badges[priority] || '';
+}
+
+/**
+ * Request browser notification permission
+ */
+async function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            notificationPreferences.browserNotifications = true;
+            saveNotificationPreferences();
+            showToast('Browser notifications enabled!', 'success');
+            addNotification('success', 'Notifications Enabled', 'You will now receive browser notifications for important updates.', {
+                category: 'updates',
+                priority: 'medium'
+            });
+        }
+    }
+}
+
+/**
+ * Toggle notification dropdown
+ */
+function toggleNotifications() {
+    const dropdown = document.getElementById('notification-dropdown');
+    if (!dropdown) return;
+
+    const isHidden = dropdown.classList.contains('hidden');
+
+    // Close other dropdowns
+    document.getElementById('autocomplete-dropdown')?.classList.add('hidden');
+    document.getElementById('history-header-dropdown')?.classList.add('hidden');
+
+    if (isHidden) {
+        dropdown.classList.remove('hidden');
+        updateNotificationList();
+    } else {
+        dropdown.classList.add('hidden');
+    }
+}
+
+/**
+ * Update notification badge count
+ */
+function updateNotificationBadge() {
+    unreadCount = notifications.filter(n => !n.read).length;
+    const badge = document.getElementById('notification-count');
+
+    if (badge) {
+        badge.textContent = unreadCount;
+        if (unreadCount > 0) {
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+}
+
+/**
+ * Update notification list in dropdown with filtering
+ */
+function updateNotificationList() {
+    const list = document.getElementById('notification-list');
+    if (!list) return;
+
+    // Apply filter
+    let filteredList = notifications;
+    if (currentNotifFilter !== 'all') {
+        filteredList = notifications.filter(n => n.category === currentNotifFilter);
+    }
+
+    if (filteredList.length === 0) {
+        list.innerHTML = `
+            <div class="empty-state">
+                <p>No ${currentNotifFilter === 'all' ? '' : currentNotifFilter} notifications</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Group filtered notifications by date
+    const grouped = groupNotificationsByDate(filteredList);
+
+    list.innerHTML = Object.keys(grouped).map(dateGroup => `
+        <div class="notification-date-group">
+            <div class="notification-date-header">${dateGroup}</div>
+            ${grouped[dateGroup].map(notif => `
+                <div class="notification-item ${notif.read ? '' : 'unread'} priority-${notif.priority}" 
+                     onclick="handleNotificationClick('${notif.id}')">
+                    <div class="notification-icon">${getNotificationIcon(notif.type)}</div>
+                    <div class="notification-content">
+                        <div class="notification-title-row">
+                            <span class="notification-title">${escapeHtml(notif.title)}</span>
+                            ${notif.priority !== 'medium' ? getPriorityBadge(notif.priority) : ''}
+                        </div>
+                        <span class="notification-body">${escapeHtml(notif.message)}</span>
+                        <div style="display:flex; justify-content: space-between; align-items: center; margin-top:4px;">
+                            <span class="notification-time">${formatNotificationTime(notif.timestamp)}</span>
+                            <span style="font-size:9px; color: var(--text-muted); text-transform:uppercase;">${notif.category}</span>
+                        </div>
+                        ${notif.actions && notif.actions.length > 0 ? `
+                            <div class="notification-actions">
+                                ${notif.actions.map(action => `
+                                    <button class="notification-action-btn" onclick="event.stopPropagation(); handleNotificationAction('${notif.id}', '${action.label}')">
+                                        ${action.label}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <button class="notification-dismiss" onclick="event.stopPropagation(); dismissNotification('${notif.id}')" title="Dismiss">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+            `).join('')}
+        </div>
+    `).join('');
+}
+
+/**
+ * Filter notifications by category
+ */
+function filterNotifications(category, btn) {
+    currentNotifFilter = category;
+
+    // Update tabs
+    document.querySelectorAll('.notif-filter-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+
+    updateNotificationList();
+}
+
+/**
+ * Notification Settings Modal
+ */
+function openNotificationSettings() {
+    console.log('Opening notification settings...');
+    const modal = document.getElementById('notification-settings-modal');
+    if (modal) {
+        modal.classList.add('open');
+        syncSettingsUI();
+    } else {
+        console.error('Notification settings modal not found');
+    }
+}
+
+function closeNotificationSettings() {
+    document.getElementById('notification-settings-modal')?.classList.remove('open');
+}
+
+function syncSettingsUI() {
+    if (!notificationPreferences) {
+        console.warn('notificationPreferences not initialized, resetting to defaults');
+        notificationPreferences = {
+            enabled: true,
+            sound: true,
+            browserNotifications: false,
+            categories: { articles: true, searches: true, updates: true, achievements: true }
+        };
+        saveNotificationPreferences();
+    }
+
+    const mainToggle = document.getElementById('notif-enabled-main');
+    const soundToggle = document.getElementById('notif-sound');
+    const browserToggle = document.getElementById('notif-browser');
+
+    if (mainToggle) mainToggle.checked = !!notificationPreferences.enabled;
+    if (soundToggle) soundToggle.checked = !!notificationPreferences.sound;
+    if (browserToggle) browserToggle.checked = !!notificationPreferences.browserNotifications;
+
+    // sync categories
+    if (notificationPreferences.categories) {
+        Object.keys(notificationPreferences.categories).forEach(cat => {
+            const el = document.getElementById(`cat-${cat}`);
+            if (el) el.checked = !!notificationPreferences.categories[cat];
+        });
+    }
+}
+
+function updatePref(key, value) {
+    notificationPreferences[key] = value;
+    saveNotificationPreferences();
+}
+
+function updatePrefCat(cat, value) {
+    notificationPreferences.categories[cat] = value;
+    saveNotificationPreferences();
+}
+
+async function toggleBrowserNotifs(enabled) {
+    if (enabled) {
+        await requestNotificationPermission();
+    } else {
+        notificationPreferences.browserNotifications = false;
+        saveNotificationPreferences();
+    }
+}
+
+/**
+ * ACHIEVEMENT SYSTEM
+ */
+function checkAchievementsStatus() {
+    const stats = {
+        readingList: JSON.parse(localStorage.getItem('readingList') || '[]').length,
+        searches: JSON.parse(localStorage.getItem('searchHistory') || '[]').length
+    };
+
+    const unlocked = JSON.parse(localStorage.getItem('unlockedAchievements') || '[]');
+
+    // Achievement: First Search
+    if (stats.searches >= 1 && !unlocked.includes('first_search')) {
+        unlockAchievement('first_search', 'Scientific Explorer', 'You performed your first biomedical search!');
+    }
+
+    // Achievement: 10 Saves
+    if (stats.readingList >= 10 && !unlocked.includes('collector_10')) {
+        unlockAchievement('collector_10', 'Knowledge Collector', 'You saved 10 articles to your reading list!');
+    }
+}
+
+function unlockAchievement(id, title, message) {
+    const unlocked = JSON.parse(localStorage.getItem('unlockedAchievements') || '[]');
+    unlocked.push(id);
+    localStorage.setItem('unlockedAchievements', JSON.stringify(unlocked));
+
+    addNotification('achievement', `New Achievement: ${title}`, message, {
+        category: 'achievements',
+        priority: 'medium',
+        sound: true
+    });
+}
+
+/**
+ * Group notifications by date
+ */
+function groupNotificationsByDate(notifications) {
+    const groups = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    notifications.forEach(notif => {
+        const notifDate = new Date(notif.timestamp);
+        notifDate.setHours(0, 0, 0, 0);
+
+        let groupKey;
+        if (notifDate.getTime() === today.getTime()) {
+            groupKey = 'Today';
+        } else if (notifDate.getTime() === yesterday.getTime()) {
+            groupKey = 'Yesterday';
+        } else {
+            groupKey = notifDate.toLocaleDateString();
+        }
+
+        if (!groups[groupKey]) {
+            groups[groupKey] = [];
+        }
+        groups[groupKey].push(notif);
+    });
+
+    return groups;
+}
+
+/**
+ * Handle notification click
+ */
+function handleNotificationClick(notificationId) {
+    const notification = notifications.find(n => n.id === notificationId);
+    if (!notification) return;
+
+    // Mark as read
+    notification.read = true;
+    saveNotifications();
+    updateNotificationBadge();
+    updateNotificationList();
+}
+
+/**
+ * Handle notification action button click
+ */
+function handleNotificationAction(notificationId, actionLabel) {
+    const notification = notifications.find(n => n.id === notificationId);
+    if (!notification) return;
+
+    const action = notification.actions.find(a => a.label === actionLabel);
+    if (action && action.callback) {
+        action.callback(notification);
+    }
+
+    // Mark as read and dismiss
+    notification.read = true;
+    dismissNotification(notificationId);
+}
+
+/**
+ * Dismiss a notification
+ */
+function dismissNotification(notificationId) {
+    notifications = notifications.filter(n => n.id !== notificationId);
+    saveNotifications();
+    updateNotificationBadge();
+    updateNotificationList();
+}
+
+/**
+ * Mark all notifications as read
+ */
+function markAllNotificationsRead() {
+    notifications.forEach(n => n.read = true);
+    saveNotifications();
+    updateNotificationBadge();
+    updateNotificationList();
+    showToast('All notifications marked as read', 'success');
+}
+
+/**
+ * Save notifications to localStorage
+ */
+function saveNotifications() {
+    localStorage.setItem('notifications', JSON.stringify(notifications));
+}
+
+/**
+ * Save notification preferences
+ */
+function saveNotificationPreferences() {
+    localStorage.setItem('notificationPreferences', JSON.stringify(notificationPreferences));
+}
+
+/**
+ * Format notification timestamp
+ */
+function formatNotificationTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    return date.toLocaleDateString();
+}
+
+// Initialize everything on page load
+document.addEventListener('DOMContentLoaded', function () {
+    // Core App initialization
+    if (typeof init === 'function') {
+        init().catch(err => console.error('Init failed:', err));
+    }
+
+    // Notification initialization
+    initNotifications();
+
+    // Close notification dropdown when clicking outside
+    document.addEventListener('click', function (e) {
+        const notificationContainer = document.querySelector('.notification-container');
+        const dropdown = document.getElementById('notification-dropdown');
+
+        if (dropdown && !dropdown.classList.contains('hidden')) {
+            if (!notificationContainer?.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        }
+    });
+
+    // Status Checker
+    function checkSystemStatus() {
+        const dot = document.getElementById('status-dot');
+        const txt = document.getElementById('status-text');
+        if (!dot || !txt) return;
+
+        fetch(API_BASE_URL + '/health')
+            .then(r => {
+                if (r.ok) {
+                    dot.className = 'status-dot connected';
+                    txt.textContent = 'System Online';
+                } else {
+                    throw new Error('API Error');
+                }
+            })
+            .catch(e => {
+                dot.className = 'status-dot error';
+                txt.textContent = 'Offline';
+            });
+    }
+    checkSystemStatus();
+    setInterval(checkSystemStatus, 30000);
+});
+

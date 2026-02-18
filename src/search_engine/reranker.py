@@ -16,13 +16,13 @@ class CrossEncoderReranker:
     
     def __init__(
         self,
-        model_name: str = "cross-encoder/ms-marco-MiniLM-L-6-v2",
+        model_name: str = "dmis-lab/biobert-v1.1",
         device: str = None
     ):
         """Initialize cross-encoder reranker.
         
         Args:
-            model_name: Name of cross-encoder model
+            model_name: Name of cross-encoder model (default: dmis-lab/biobert-v1.1)
             device: Device to run model on ('cuda' or 'cpu')
         """
         self.model_name = model_name

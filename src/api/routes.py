@@ -3,10 +3,7 @@ API route handlers for biomedical search engine.
 """
 
 import time
-from typing import List
-from fastapi import APIRouter, HTTPException, Depends, Query
-from fastapi.responses import JSONResponse
-
+import httpx
 from src.api.models import (
     SearchRequest,
     SearchResponse,
@@ -23,6 +20,7 @@ from src.api.models import (
     AnswerResult,
     PassageResult
 )
+
 from src.api.dependencies import (
     get_settings,
     get_search_engine,
@@ -36,7 +34,8 @@ from src.qa_module.qa_engine import QuestionAnsweringEngine
 from src.indexing.document_indexer import DocumentIndexer
 from src.utils.config import Settings
 from src.utils.logger import logger
-
+from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi.responses import JSONResponse
 
 router = APIRouter(prefix="/api/v1", tags=["api"])
 
@@ -78,87 +77,127 @@ async def health_check(
             version="1.0.0"
         )
 
-
 @router.post("/search", response_model=SearchResponse)
 async def search_documents(
     request: SearchRequest,
     search_engine: HybridSearchEngine = Depends(get_search_engine),
-    reranker: CrossEncoderReranker = Depends(get_reranker)
+    reranker: CrossEncoderReranker = Depends(get_reranker),
+    settings: Settings = Depends(get_settings)
 ):
     """
-    Search for documents using hybrid search (BM25 + semantic).
-    
-    Supports searching PubMed articles, clinical trials, or both.
-    Optional cross-encoder reranking for improved relevance.
+    Search for documents using hybrid search or Google Serper.
     """
     try:
         start_time = time.time()
-        
-        # Determine index to search
-        if request.index == "pubmed":
-            index_name = "pubmed_articles"
-        elif request.index == "clinical_trials":
-            index_name = "clinical_trials"
-        else:  # both
-            index_name = "all"
-        
-        # Perform hybrid search
-        logger.info(f"Searching '{request.query}' in {index_name}")
-        results = search_engine.hybrid_search(
-            index_name=index_name,
-            query=request.query,
-            size=request.max_results,
-            alpha=request.alpha,
-            sort_by=request.sort_by,
-            date_from=request.date_from,
-            date_to=request.date_to
-        )
-        
-        # Apply reranking if requested and available
-        if request.use_reranking and results:
-            if reranker is not None:
-                logger.info("Applying cross-encoder reranking")
-                results = reranker.rerank(request.query, results)
-            else:
-                logger.warning("Reranking requested but disabled (LOW_MEMORY_MODE)")
-        
-        # Ensure results are sorted by score (descending)
-        results.sort(key=lambda x: x.get('score', 0), reverse=True)
-        
-        # Convert to response format
         document_results = []
-        for result in results:
-            # Handle simplified result format from hybrid_search
-            # Result contains: {'id': ..., 'score': ..., 'source': {...}}
-            source = result.get("source", {})
-            doc_id = result.get("id", "")
+        
+        if request.index == "google":
+            # Perform Google Search via Serper
+            if not settings.serper_api_key or settings.serper_api_key == "YOUR_SERPER_API_KEY_HERE":
+                logger.warning("Serper API key not configured on backend")
+                # Don't throw 500, return empty results with a message
+                return SearchResponse(
+                    query=request.query,
+                    total_results=0,
+                    results=[],
+                    search_time_ms=round((time.time() - start_time) * 1000, 2)
+                )
+
+            logger.info(f"Performing Google Search via Serper for: '{request.query}'")
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "https://google.serper.dev/search",
+                    headers={
+                        "X-API-KEY": settings.serper_api_key,
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "q": request.query,
+                        "num": request.max_results
+                    },
+                    timeout=10.0
+                )
+                
+                if response.status_code != 200:
+                    logger.error(f"Serper API failed: {response.text}")
+                    raise HTTPException(status_code=response.status_code, detail=f"Serper API failed: {response.text}")
+                
+                serper_data = response.json()
+                for i, item in enumerate(serper_data.get("organic", [])):
+                    document_results.append(DocumentResult(
+                        id=f"google-{i}",
+                        title=item.get("title") or "No Title",
+                        abstract=item.get("snippet") or "No snippet available.",
+                        score=1.0 - (i * 0.01),
+                        source="google",
+                        metadata={
+                            "authors": ["Web Content"],
+                            "publication_date": item.get("date") or "N/A",
+                            "journal": httpx.URL(item.get("link")).host if item.get("link") else "N/A",
+                            "url": item.get("link")
+                        }
+                    ))
+        else:
+            # Existing Elasticsearch logic
+            # Determine index to search
+            if request.index == "pubmed":
+                index_name = "pubmed_articles"
+            elif request.index == "clinical_trials":
+                index_name = "clinical_trials"
+            else:  # both
+                index_name = "all"
             
-            # Determine source type from document fields
-            if "source" in source and source["source"]:
-                source_type = source["source"]
-            elif "pmid" in source and source["pmid"]:
-                source_type = "pubmed"
-            elif "nct_id" in source and source["nct_id"]:
-                source_type = "clinical_trials"
-            else:
-                # Fallback: use the index parameter
-                source_type = "pubmed" if index_name == "pubmed_articles" else "clinical_trials"
+            # Perform hybrid search
+            logger.info(f"Searching '{request.query}' in {index_name}")
+            results = search_engine.hybrid_search(
+                index_name=index_name,
+                query=request.query,
+                size=request.max_results,
+                alpha=request.alpha,
+                sort_by=request.sort_by,
+                date_from=request.date_from,
+                date_to=request.date_to
+            )
             
-            document_results.append(DocumentResult(
-                id=doc_id,
-                title=source.get("title") or "No Title",
-                abstract=source.get("abstract") or "No abstract available.",
-                score=result.get("score") or 0.0,
-                source=source_type,
-                metadata={
-                    "authors": source.get("authors") or [],
-                    # For clinical trials, fallback to start_date if publication_date not available
-                    "publication_date": source.get("publication_date") or source.get("start_date") or "N/A",
-                    "journal": source.get("journal") or "N/A",
-                    "pmid": source.get("pmid"),
-                    "nct_id": source.get("nct_id")
-                }
-            ))
+            # Apply reranking if requested and available
+            if request.use_reranking and results:
+                if reranker is not None:
+                    logger.info("Applying cross-encoder reranking")
+                    results = reranker.rerank(request.query, results)
+                else:
+                    logger.warning("Reranking requested but disabled (LOW_MEMORY_MODE)")
+            
+            # Ensure results are sorted by score (descending)
+            results.sort(key=lambda x: x.get('score', 0), reverse=True)
+            
+            # Convert to response format
+            for result in results:
+                source = result.get("source", {})
+                doc_id = result.get("id", "")
+                
+                if "source" in source and source["source"]:
+                    source_type = source["source"]
+                elif "pmid" in source and source["pmid"]:
+                    source_type = "pubmed"
+                elif "nct_id" in source and source["nct_id"]:
+                    source_type = "clinical_trials"
+                else:
+                    source_type = "pubmed" if index_name == "pubmed_articles" else "clinical_trials"
+                
+                document_results.append(DocumentResult(
+                    id=doc_id,
+                    title=source.get("title") or "No Title",
+                    abstract=source.get("abstract") or "No abstract available.",
+                    score=result.get("score") or 0.0,
+                    source=source_type,
+                    metadata={
+                        "authors": source.get("authors") or [],
+                        "publication_date": source.get("publication_date") or source.get("start_date") or "N/A",
+                        "journal": source.get("journal") or "N/A",
+                        "pmid": source.get("pmid"),
+                        "nct_id": source.get("nct_id")
+                    }
+                ))
         
         search_time_ms = (time.time() - start_time) * 1000
         

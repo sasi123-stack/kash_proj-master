@@ -1,6 +1,6 @@
 {
-    "name": "BioSense AI",
-    "short_name": "BioSense",
+    "name": "BioMedScholar AI",
+    "short_name": "BioMedScholar",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'biomed-scholar-v1.2.7';
+const CACHE_NAME = 'biomed-scholar-v1.3.0';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -39,7 +39,15 @@ self.addEventListener('fetch', (event) => {
 
     // Skip caching for API requests (especially health check)
     if (event.request.url.includes('/api/v1/')) {
-        event.respondWith(fetch(event.request));
+        event.respondWith(
+            fetch(event.request).catch(err => {
+                console.warn('API fetch failed in SW:', err);
+                return new Response(JSON.stringify({ error: 'Offline', message: 'API unavailable' }), {
+                    status: 503,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            })
+        );
         return;
     }
 

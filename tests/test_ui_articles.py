@@ -16,7 +16,7 @@ BASE_URL = "https://biomed-scholar.web.app"
 def driver():
     """Pytest fixture for Selenium WebDriver."""
     chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Headless mode for CI
+    chrome_options.add_argument("--headless")  # Headless mode for testing
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--window-size=1920,1080")
@@ -25,6 +25,7 @@ def driver():
     driver = webdriver.Chrome(service=service, options=chrome_options)
     yield driver
     driver.quit()
+
 
 @pytest.fixture
 def wait(driver):
@@ -37,7 +38,7 @@ class TestArticlesTab:
     def test_page_load(self, driver):
         """Verify the application loads and the Articles tab is active by default."""
         driver.get(BASE_URL)
-        assert "BioSense AI" in driver.title
+        assert "BioMedScholar AI" in driver.title
         
         # Check if Articles tab is active
         articles_tab_btn = driver.find_element(By.CSS_SELECTOR, "button.nav-tab[data-tab='articles']")

@@ -9,7 +9,7 @@ from src.utils.logger import get_logger
 logger = get_logger(__name__)
 
 class GroqGenerator:
-    """Generates comprehensive answers using Groq's high-performance LLMs (e.g., Llama 3)."""
+    """Generates comprehensive answers using Groq's high-performance LLMs (e.g., Llama 4)."""
     
     def __init__(self, api_key: Optional[str] = None):
         """Initialize Groq generator.
@@ -29,8 +29,9 @@ class GroqGenerator:
                 logger.error(f"Failed to initialize Groq client: {e}")
                 self.client = None
             
-        # Default model to Llama 3.3 70B Versatile for high quality and speed
-        self.model_name = 'llama-3.3-70b-versatile'
+            
+        # Default model to Llama 4 70B Versatile for next-gen performance
+        self.model_name = 'llama-4-70b-versatile'
 
     def generate_answer(self, question: str, passages: List[Dict]) -> Dict:
         """Generate an answer based on the question and retrieved passages.
