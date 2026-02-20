@@ -45,6 +45,9 @@ class HybridSearchEngine:
         fields: Optional[List[str]] = None,
         date_from: Optional[int] = None,
         date_to: Optional[int] = None,
+        article_types: Optional[List[str]] = None,
+        subject: Optional[str] = None,
+        availability: Optional[str] = None,
         sort_by: str = "relevance"
     ) -> List[Dict]:
         """Perform keyword-based search (BM25).
@@ -56,6 +59,9 @@ class HybridSearchEngine:
             fields: Fields to search
             date_from: Start year
             date_to: End year
+            article_types: Article types filter
+            subject: Subject filter
+            availability: Availability filter
             sort_by: Sort criteria
             
         Returns:
@@ -63,7 +69,8 @@ class HybridSearchEngine:
         """
         # Build Elasticsearch query
         es_query = self.query_processor.build_elasticsearch_query(
-            query, fields, date_from=date_from, date_to=date_to
+            query, fields, date_from=date_from, date_to=date_to,
+            article_types=article_types, subject=subject, availability=availability
         )
         es_query['size'] = size
         
@@ -111,6 +118,9 @@ class HybridSearchEngine:
         embedding_field: str = 'embedding',
         date_from: Optional[int] = None,
         date_to: Optional[int] = None,
+        article_types: Optional[List[str]] = None,
+        subject: Optional[str] = None,
+        availability: Optional[str] = None,
         sort_by: str = "relevance"
     ) -> List[Dict]:
         """Perform semantic search using embeddings.
@@ -122,6 +132,9 @@ class HybridSearchEngine:
             embedding_field: Name of embedding field in documents
             date_from: Start year
             date_to: End year
+            article_types: Article types filter
+            subject: Subject filter
+            availability: Availability filter
             sort_by: Sort criteria
             
         Returns:
@@ -142,13 +155,46 @@ class HybridSearchEngine:
             filter_clauses.append({
                 "bool": {
                     "should": [
-                        {"range": {"publication_year": range_filter}},
-                        {"range": {"year": range_filter}},
-                        {"range": {"start_year": range_filter}}
+                        {"range": {"publication_year.keyword": range_filter}},
+                        {"range": {"year.keyword": range_filter}},
+                        {"range": {"start_year.keyword": range_filter}},
+                        {"range": {"metadata.publication_year.keyword": range_filter}},
+                        {"range": {"metadata.year.keyword": range_filter}}
                     ],
                     "minimum_should_match": 1
                 }
             })
+
+        # Article Type Filter
+        if article_types and len(article_types) > 0:
+            filter_clauses.append({
+                "terms": {
+                    "metadata.article_type.keyword": article_types
+                }
+            })
+            
+        # Subject Filter
+        if subject and subject != 'all':
+            filter_clauses.append({
+                "term": {
+                    "metadata.subject.keyword": subject
+                }
+            })
+            
+        # Availability Filter
+        if availability and availability != 'all':
+            if availability == 'full_text':
+                filter_clauses.append({
+                    "exists": {
+                        "field": "full_text"
+                    }
+                })
+            elif availability == 'open_access':
+                 filter_clauses.append({
+                    "term": {
+                        "metadata.is_open_access": True
+                    }
+                })
 
         # Build cosine similarity query
         base_query = {'match_all': {}}
@@ -244,6 +290,9 @@ class HybridSearchEngine:
         alpha: Optional[float] = None,
         date_from: Optional[int] = None,
         date_to: Optional[int] = None,
+        article_types: Optional[List[str]] = None,
+        subject: Optional[str] = None,
+        availability: Optional[str] = None,
         sort_by: str = "relevance"
     ) -> List[Dict]:
         """Perform hybrid search combining BM25 and semantic search.
@@ -255,6 +304,9 @@ class HybridSearchEngine:
             alpha: Weight for BM25 score (overrides default)
             date_from: Start year
             date_to: End year
+            article_types: Article types filter
+            subject: Subject filter
+            availability: Availability filter
             sort_by: Sort criteria
             
         Returns:
@@ -276,11 +328,15 @@ class HybridSearchEngine:
         # Note: we use relevance sorting for the sub-searches to get top relevant candidates
         keyword_results = self.keyword_search(
             index_name, expanded_query, size=size*2, 
-            date_from=date_from, date_to=date_to, sort_by="relevance"
+            date_from=date_from, date_to=date_to, 
+            article_types=article_types, subject=subject, availability=availability,
+            sort_by="relevance"
         )
         semantic_results = self.semantic_search(
             index_name, query, size=size*2, 
-            date_from=date_from, date_to=date_to, sort_by="relevance"
+            date_from=date_from, date_to=date_to,
+            article_types=article_types, subject=subject, availability=availability, 
+            sort_by="relevance"
         )
         
         # Normalize scores

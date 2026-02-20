@@ -2204,6 +2204,19 @@ body.chat-mode {
     font-weight: 600;
 }
 
+.recent-badge {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 8px;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
 .meta-separator {
     color: var(--border-color);
     font-size: 10px;
@@ -5065,15 +5078,26 @@ body {
 }
 
 /* Nav Tab Enhancement */
-.nav-tab span.ready-tag {
-    background: #e8f5e9;
-    color: #2e7d32;
+.nav-tab .tab-badge {
     font-size: 9px;
     padding: 2px 6px;
     border-radius: 4px;
-    font-weight: 700;
+    font-weight: 800;
     text-transform: uppercase;
     margin-left: 8px;
+    letter-spacing: 0.5px;
+}
+
+.tab-badge-beta {
+    background: #e3f2fd;
+    color: #1565c0;
+    border: 1px solid rgba(21, 101, 192, 0.2);
+}
+
+.tab-badge-testing {
+    background: #fff3e0;
+    color: #e65100;
+    border: 1px solid rgba(230, 81, 0, 0.2);
 }
 
 /* Sidebar Research Badge */
@@ -5097,4 +5121,22 @@ body {
     height: 16px;
     background: var(--primary-blue);
     border-radius: 2px;
-}.app-footer { background: var(--bg-secondary); border-top: 1px solid var(--border-color); padding: 24px 0; margin-top: auto; } .footer-content { max-width: 1400px; margin: 0 auto; padding: 0 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+}
+
+.app-footer {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    padding: 24px 0;
+    margin-top: auto;
+}
+
+.footer-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}

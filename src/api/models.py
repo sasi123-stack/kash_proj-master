@@ -17,6 +17,9 @@ class SearchRequest(BaseModel):
     sort_by: Optional[str] = Field("relevance", description="Sort criteria: 'relevance', 'date_desc', 'date_asc'")
     date_from: Optional[int] = Field(None, description="Start year filter")
     date_to: Optional[int] = Field(None, description="End year filter")
+    article_types: Optional[List[str]] = Field(default_factory=list, description="List of article types to filter by")
+    subject: Optional[str] = Field(None, description="Subject filter (human, animal, etc.)")
+    availability: Optional[str] = Field(None, description="Availability filter (abstract, full_text, open_access)")
 
 
 class DocumentResult(BaseModel):

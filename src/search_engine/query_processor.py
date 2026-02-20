@@ -132,9 +132,12 @@ class QueryProcessor:
         fields: Optional[List[str]] = None,
         boost_title: float = 2.0,
         date_from: Optional[int] = None,
-        date_to: Optional[int] = None
+        date_to: Optional[int] = None,
+        article_types: Optional[List[str]] = None,
+        subject: Optional[str] = None,
+        availability: Optional[str] = None
     ) -> Dict:
-        """Build Elasticsearch query DSL with optional date filtering.
+        """Build Elasticsearch query DSL with optional filters.
         
         Args:
             query: Search query
@@ -142,6 +145,9 @@ class QueryProcessor:
             boost_title: Boost factor for title field
             date_from: Start year
             date_to: End year
+            article_types: List of article types to include
+            subject: Subject filter (human, animal, etc.)
+            availability: Availability filter (full_text, free, etc.)
             
         Returns:
             Elasticsearch query dictionary
@@ -185,6 +191,8 @@ class QueryProcessor:
 
         # Build filter clause
         filter_clauses = []
+        
+        # Date Filter
         if date_from or date_to:
             range_filter = {}
             if date_from:
@@ -196,13 +204,48 @@ class QueryProcessor:
             filter_clauses.append({
                 "bool": {
                     "should": [
-                        {"range": {"publication_year": range_filter}},
-                        {"range": {"year": range_filter}},
-                        {"range": {"start_year": range_filter}}
+                        {"range": {"publication_year.keyword": range_filter}},
+                        {"range": {"year.keyword": range_filter}},
+                        {"range": {"start_year.keyword": range_filter}},
+                        {"range": {"metadata.publication_year.keyword": range_filter}},
+                        {"range": {"metadata.year.keyword": range_filter}}
                     ],
                     "minimum_should_match": 1
                 }
             })
+            
+        # Article Type Filter
+        if article_types and len(article_types) > 0:
+            # Map frontend types to potential backend values if needed
+            # For now assume direct mapping to metadata.article_type
+            filter_clauses.append({
+                "terms": {
+                    "metadata.article_type.keyword": article_types
+                }
+            })
+            
+        # Subject Filter
+        if subject and subject != 'all':
+            filter_clauses.append({
+                "term": {
+                    "metadata.subject.keyword": subject
+                }
+            })
+            
+        # Availability Filter
+        if availability and availability != 'all':
+            if availability == 'full_text':
+                filter_clauses.append({
+                    "exists": {
+                        "field": "full_text"
+                    }
+                })
+            elif availability == 'open_access':
+                 filter_clauses.append({
+                    "term": {
+                        "metadata.is_open_access": True
+                    }
+                })
 
         es_query = {
             'query': {

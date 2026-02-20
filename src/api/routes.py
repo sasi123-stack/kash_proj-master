@@ -156,7 +156,10 @@ async def search_documents(
                 alpha=request.alpha,
                 sort_by=request.sort_by,
                 date_from=request.date_from,
-                date_to=request.date_to
+                date_to=request.date_to,
+                article_types=request.article_types,
+                subject=request.subject,
+                availability=request.availability
             )
             
             # Apply reranking if requested and available
@@ -192,7 +195,7 @@ async def search_documents(
                     source=source_type,
                     metadata={
                         "authors": source.get("authors") or [],
-                        "publication_date": source.get("publication_date") or source.get("start_date") or "N/A",
+                        "publication_date": source.get("publication_date") or source.get("publication_year") or source.get("year") or source.get("start_date") or "N/A",
                         "journal": source.get("journal") or "N/A",
                         "pmid": source.get("pmid"),
                         "nct_id": source.get("nct_id")
@@ -415,7 +418,7 @@ async def get_document(
             metadata={
                 "authors": source.get("authors", []),
                 # For clinical trials, fallback to start_date if publication_date not available
-                "publication_date": source.get("publication_date") or source.get("start_date") or "N/A",
+                "publication_date": source.get("publication_date") or source.get("publication_year") or source.get("year") or source.get("start_date") or "N/A",
                 "journal": source.get("journal") or "N/A",
                 "pmid": source.get("pmid"),
                 "nct_id": source.get("nct_id"),

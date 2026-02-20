@@ -310,6 +310,7 @@
                         <line x1="16" y1="17" x2="8" y2="17" />
                     </svg>
                     <span>Research Desk</span>
+                    <span class="tab-badge tab-badge-beta">BETA</span>
                 </button>
                 <button class="nav-tab" data-tab="qa">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -318,6 +319,7 @@
                         <line x1="12" y1="17" x2="12.01" y2="17" />
                     </svg>
                     <span>Research AI Chat</span>
+                    <span class="tab-badge tab-badge-testing">Yet to Test</span>
                 </button>
                 <button class="nav-tab" data-tab="trends">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -325,6 +327,7 @@
                         <polyline points="17 6 23 6 23 12" />
                     </svg>
                     <span>Research Trends</span>
+                    <span class="tab-badge tab-badge-testing">Yet to Test</span>
                 </button>
             </div>
             <div class="nav-info">
@@ -500,26 +503,7 @@
                     </select>
                 </div>
 
-                <!-- Language -->
-                <div class="filter-section">
-                    <h3 class="filter-title">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <line x1="2" y1="12" x2="22" y2="12" />
-                            <path
-                                d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                        </svg>
-                        Language
-                    </h3>
-                    <select class="filter-select" id="language-filter">
-                        <option value="any">All Languages</option>
-                        <option value="en">English</option>
-                        <option value="es">Spanish</option>
-                        <option value="fr">French</option>
-                        <option value="de">German</option>
-                    </select>
-                </div>
+
 
                 <!-- Article Type -->
                 <div class="filter-section">
@@ -544,8 +528,16 @@
                             <span>Review Articles</span>
                         </label>
                         <label class="checkbox-filter">
+                            <input type="checkbox" value="systematic-review" checked>
+                            <span>Systematic Reviews</span>
+                        </label>
+                        <label class="checkbox-filter">
                             <input type="checkbox" value="meta-analysis" checked>
                             <span>Meta-Analysis</span>
+                        </label>
+                        <label class="checkbox-filter">
+                            <input type="checkbox" value="rct" checked>
+                            <span>Randomized Controlled Trials (RCT)</span>
                         </label>
                         <label class="checkbox-filter">
                             <input type="checkbox" value="case-study" checked>
@@ -800,13 +792,14 @@
                             <div class="quick-filter-section">
                                 <span class="quick-filter-sublabel">Data Source</span>
                                 <div class="quick-filter-group">
-                                    <button class="quick-filter-chip" onclick="toggleQuickFilter('source', 'all')">All
+                                    <button class="quick-filter-chip" data-type="source" data-value="all"
+                                        onclick="toggleQuickFilter('source', 'all')">All
                                         Sources</button>
-                                    <button class="quick-filter-chip"
+                                    <button class="quick-filter-chip" data-type="source" data-value="pubmed"
                                         onclick="toggleQuickFilter('source', 'pubmed')">PubMed</button>
-                                    <button class="quick-filter-chip"
+                                    <button class="quick-filter-chip" data-type="source" data-value="clinical_trials"
                                         onclick="toggleQuickFilter('source', 'clinical_trials')">ClinicalTrials.gov</button>
-                                    <button class="quick-filter-chip"
+                                    <button class="quick-filter-chip" data-type="source" data-value="google"
                                         onclick="toggleQuickFilter('source', 'google')">Web Search (Google)</button>
                                 </div>
                             </div>
@@ -816,75 +809,34 @@
                             <div class="quick-filter-section">
                                 <span class="quick-filter-sublabel">Publication Year</span>
                                 <div class="quick-filter-group">
-                                    <button class="quick-filter-chip"
+                                    <button class="quick-filter-chip" data-type="dateRange" data-value="2026"
+                                        onclick="toggleQuickFilter('dateRange', '2026')">2026</button>
+                                    <button class="quick-filter-chip" data-type="dateRange" data-value="2025"
                                         onclick="toggleQuickFilter('dateRange', '2025')">2025</button>
-                                    <button class="quick-filter-chip"
+                                    <button class="quick-filter-chip" data-type="dateRange" data-value="2024"
                                         onclick="toggleQuickFilter('dateRange', '2024')">2024</button>
-                                    <button class="quick-filter-chip"
+                                    <button class="quick-filter-chip" data-type="dateRange" data-value="2023"
                                         onclick="toggleQuickFilter('dateRange', '2023')">2023</button>
-                                    <button class="quick-filter-chip"
+                                    <button class="quick-filter-chip" data-type="dateRange" data-value="2022"
                                         onclick="toggleQuickFilter('dateRange', '2022')">2022</button>
+                                    <button class="quick-filter-chip" data-type="dateRange" data-value="2021"
+                                        onclick="toggleQuickFilter('dateRange', '2021')">2021</button>
+                                    <button class="quick-filter-chip" data-type="dateRange" data-value="2020"
+                                        onclick="toggleQuickFilter('dateRange', '2020')">2020</button>
                                 </div>
                             </div>
 
                             <div class="quick-filter-section">
                                 <span class="quick-filter-sublabel">Time Horizon</span>
                                 <div class="quick-filter-group">
-                                    <button class="quick-filter-chip"
+                                    <button class="quick-filter-chip" data-type="dateRange" data-value="any"
                                         onclick="toggleQuickFilter('dateRange', 'any')">All Time</button>
-                                    <button class="quick-filter-chip"
+                                    <button class="quick-filter-chip" data-type="dateRange" data-value="3y"
                                         onclick="toggleQuickFilter('dateRange', '3y')">Last 3Y</button>
-                                    <button class="quick-filter-chip"
+                                    <button class="quick-filter-chip" data-type="dateRange" data-value="5y"
                                         onclick="toggleQuickFilter('dateRange', '5y')">Last 5Y</button>
-                                    <button class="quick-filter-chip"
+                                    <button class="quick-filter-chip" data-type="dateRange" data-value="10y"
                                         onclick="toggleQuickFilter('dateRange', '10y')">Last 10Y</button>
-                                </div>
-                            </div>
-
-                            <div class="quick-filter-divider"></div>
-
-                            <div class="quick-filter-section">
-                                <span class="quick-filter-sublabel">Evidence Level / Type</span>
-                                <div class="quick-filter-group">
-                                    <button class="quick-filter-chip"
-                                        onclick="toggleQuickFilter('articleTypes', 'meta-analysis')">Meta-Analysis</button>
-                                    <button class="quick-filter-chip"
-                                        onclick="toggleQuickFilter('articleTypes', 'systematic-review')">Sys
-                                        Review</button>
-                                    <button class="quick-filter-chip"
-                                        onclick="toggleQuickFilter('articleTypes', 'rct')">RCT</button>
-                                    <button class="quick-filter-chip"
-                                        onclick="toggleQuickFilter('articleTypes', 'review')">Review</button>
-                                    <button class="quick-filter-chip"
-                                        onclick="toggleQuickFilter('articleTypes', 'research')">Research</button>
-                                </div>
-                            </div>
-
-                            <div class="quick-filter-divider"></div>
-
-                            <div class="quick-filter-section">
-                                <span class="quick-filter-sublabel">Study Subject</span>
-                                <div class="quick-filter-group">
-                                    <button class="quick-filter-chip"
-                                        onclick="toggleQuickFilter('subject', 'human')">Human</button>
-                                    <button class="quick-filter-chip"
-                                        onclick="toggleQuickFilter('subject', 'animal')">Animal</button>
-                                    <button class="quick-filter-chip"
-                                        onclick="toggleQuickFilter('subject', 'in-vitro')">In-Vitro</button>
-                                </div>
-                            </div>
-
-                            <div class="quick-filter-divider"></div>
-
-                            <div class="quick-filter-section">
-                                <span class="quick-filter-sublabel">Availability</span>
-                                <div class="quick-filter-group">
-                                    <button class="quick-filter-chip"
-                                        onclick="toggleQuickFilter('availability', 'abstract')">Abstract Only</button>
-                                    <button class="quick-filter-chip"
-                                        onclick="toggleQuickFilter('availability', 'full_text')">Full Text</button>
-                                    <button class="quick-filter-chip"
-                                        onclick="toggleQuickFilter('availability', 'open_access')">Open Access</button>
                                 </div>
                             </div>
 
@@ -896,9 +848,9 @@
                                     <button class="quick-filter-chip"
                                         onclick="toggleQuickFilter('sortBy', 'relevance')">Relevance</button>
                                     <button class="quick-filter-chip"
-                                        onclick="toggleQuickFilter('sortBy', 'newest')">Newest</button>
+                                        onclick="toggleQuickFilter('sortBy', 'date_desc')">Newest</button>
                                     <button class="quick-filter-chip"
-                                        onclick="toggleQuickFilter('sortBy', 'oldest')">Oldest</button>
+                                        onclick="toggleQuickFilter('sortBy', 'date_asc')">Oldest</button>
                                 </div>
                             </div>
 
@@ -974,27 +926,27 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Pagination -->
-                    <div class="pagination hidden" id="pagination">
-                        <button class="page-btn" id="prev-page" disabled>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <polyline points="15 18 9 12 15 6" />
-                            </svg>
-                            Previous
-                        </button>
-                        <div class="page-info">
-                            <span id="current-page">1</span> of <span id="total-pages">1</span>
+                        <!-- Pagination -->
+                        <div class="pagination hidden" id="pagination">
+                            <button class="page-btn" id="prev-page" disabled>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polyline points="15 18 9 12 15 6" />
+                                </svg>
+                                Previous
+                            </button>
+                            <div class="page-info">
+                                <span id="current-page">1</span> of <span id="total-pages">1</span>
+                            </div>
+                            <button class="page-btn" id="next-page">
+                                Next
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polyline points="9 18 15 12 9 6" />
+                                </svg>
+                            </button>
                         </div>
-                        <button class="page-btn" id="next-page">
-                            Next
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <polyline points="9 18 15 12 9 6" />
-                            </svg>
-                        </button>
                     </div>
                 </div>
 
